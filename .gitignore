@@ -1,8 +1,80 @@
-# Compiled class file
-*.class
+# Gradle 관련 파일
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+gradle-app.setting
+local.properties
 
-# Log file
+# Android Studio 관련 파일
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# 로그 및 크래시 덤프
 *.log
+crashlytics/
+fabric/
+
+# 캐시 및 빌드 결과물
+*.apk
+*.aab
+*.dex
+*.jar
+*.class
+*.keystore
+*.so
+*.o
+*.obj
+
+# NDK 관련 파일
+*.cxx/
+
+# Emulator 및 Device 관련 파일
+*.hprof
+*.lock
+*.pid
+*.stacktrace
+*.orig
+
+# 설정 파일 및 사용자별 환경설정
+/captures/
+/output.json
+/.vscode/
+.DS_Store
+Thumbs.db
+
+# IntelliJ IDEA/Android Studio 설정 관련
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/shelf/
+
+# Firebase 관련
+google-services.json
+app/google-services.json
+fabric.properties
+
+# Kotlin 관련 파일 (Gradle Plugin 데이터)
+.kotlin/
+
+# MacOS 관련
+*.DS_Store
+
+# Linux 관련
+*.swp
+*.swo
+
+# Windows 관련
+Thumbs.db
+ehthumbs.db
+
+# Java 관련 파일
+# 컴파일된 클래스 파일
+*.class
 
 # BlueJ files
 *.ctxt
@@ -10,7 +82,7 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# 패키지 파일 (JAR, WAR, etc.)
 *.jar
 *.war
 *.nar
@@ -19,9 +91,6 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Java Virtual Machine 크래시 로그
 hs_err_pid*
 replay_pid*
-
-# Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
-.kotlin/
