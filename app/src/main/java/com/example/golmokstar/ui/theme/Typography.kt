@@ -11,8 +11,15 @@ import com.example.golmokstar.R
 
 
 val Pretendard = FontFamily(
-    Font(R.font.pretendard_regular, FontWeight.Normal),
-    Font(R.font.pretendard_bold, FontWeight.Bold)
+    Font(R.font.pretendard_bold),
+    Font(R.font.pretendard_regular),
+    Font(R.font.pretendard_thin),
+    Font(R.font.pretendard_black),
+    Font(R.font.pretendard_light),
+    Font(R.font.pretendard_extrabold),
+    Font(R.font.pretendard_extralight),
+    Font(R.font.pretendard_medium),
+    Font(R.font.pretendard_semibold)
 )
 
 val AppTypography = Typography(
@@ -31,4 +38,22 @@ val AppTypography = Typography(
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp
     ),
+)
+
+val medium16 = TextStyle(
+    fontFamily = Pretendard,
+    fontWeight = FontWeight.Medium,
+    fontSize = 16.sp
+)
+
+val medium12 = TextStyle(
+    fontFamily = Pretendard,
+    fontWeight = FontWeight.Medium,
+    fontSize = 12.sp
+)
+
+val regular12 = TextStyle(
+    fontFamily = Pretendard,
+    fontWeight = FontWeight.Normal,
+    fontSize = 12.sp
 )
