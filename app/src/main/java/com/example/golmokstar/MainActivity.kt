@@ -126,7 +126,7 @@ fun BottomNavigationBar(navController: NavController) {
                             Text(
                                 text = item.title,
                                 color = if (isSelected) MainNavy else MainNavy.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.bodyMedium
+                                style = AppTypography.labelMedium
                             )
                         }
                     },
