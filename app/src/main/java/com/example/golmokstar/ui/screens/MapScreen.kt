@@ -54,14 +54,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import com.example.golmokstar.R
+import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MarkerRed
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
-import com.example.golmokstar.ui.theme.medium12
-import com.example.golmokstar.ui.theme.medium16
-import com.example.golmokstar.ui.theme.regular12
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -89,7 +87,7 @@ fun MapScreen() {
     val dataStore = DataStoreModule(context)
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    var currentLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) } // 기본값 경복궁
+    var currentLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var savedLatitude by remember { mutableDoubleStateOf(0.0) }
     var savedLongitude by remember { mutableDoubleStateOf(0.0) }
     var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
@@ -232,7 +230,7 @@ fun MapScreen() {
                 },
                 modifier = Modifier
                     .size(40.dp) // 버튼 크기를 키움
-                    .background(Color.White, shape = CircleShape) // 둥근 모서리
+                    .background(Color.White, shape = CircleShape)
             ) {
                 Icon(
                     imageVector = Icons.Default.MyLocation,
@@ -276,7 +274,7 @@ fun MapScreen() {
 
                         Text(
                             text = selectedAddress,
-                            style = medium12,
+                            style = AppTypography.labelMedium,
                             modifier = Modifier.weight(1f) // 나머지 공간 차지
                         )
 
@@ -290,7 +288,7 @@ fun MapScreen() {
 
                         Text(
                             text = "남은 시간",
-                            style = medium12,
+                            style = AppTypography.bodyMedium,
                             color = MarkerRed
                         )
                     }
@@ -305,9 +303,9 @@ fun MapScreen() {
                         Column(
                             modifier = Modifier.weight(1f), // 왼쪽 정렬
                         ) {
-                            Text("이름", style = medium16)
+                            Text("이름", style = AppTypography.bodyMedium)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("2025.02.08", style = regular12, color = TextDarkGray)
+                            Text("2025.02.08", style = AppTypography.labelSmall, color = TextDarkGray)
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -315,15 +313,15 @@ fun MapScreen() {
                         Button(
                             onClick = { /* TODO: 버튼 클릭 동작 */ },
                             modifier = Modifier
-                                .height(35.dp) // 버튼 높이 조절
-                                .width(90.dp),  // 버튼 너비 조절
+                                .height(35.dp)
+                                .width(90.dp),
                             shape = RoundedCornerShape(5.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MarkerRed,
                                 contentColor = White
                             )
                         ) {
-                            Text("방문하기", style = medium12, color = White)
+                            Text("방문하기", style = AppTypography.labelMedium, color = White)
                         }
                     }
                 }
@@ -357,11 +355,11 @@ fun MapScreen() {
                             .size(25.dp)
                             .padding(start = 8.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp)) // 아이콘과 텍스트 간의 간격
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "찜한 장소",
                         color = White,
-                        style = medium16
+                        style = AppTypography.bodyMedium
                     )
                 }
 
@@ -379,11 +377,11 @@ fun MapScreen() {
                             .size(25.dp)
                             .padding(start = 8.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp)) // 아이콘과 텍스트 간의 간격
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "방문 장소",
                         color = White,
-                        style = medium16
+                        style = AppTypography.bodyMedium
 
                     )
                 }
@@ -402,11 +400,11 @@ fun MapScreen() {
                             .size(25.dp)
                             .padding(start = 8.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp)) // 아이콘과 텍스트 간의 간격
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "기록 장소",
                         color = White,
-                        style = medium16
+                        style = AppTypography.bodyMedium
                     )
                 }
             }
@@ -419,7 +417,7 @@ fun MapScreen() {
             modifier = Modifier
                 .padding(16.dp)
                 .width(180.dp)
-                .height(50.dp) // 드롭박스 높이를 줄임
+                .height(50.dp)
                 .align(Alignment.TopStart)
         ) {
             OutlinedTextField(
@@ -445,7 +443,7 @@ fun MapScreen() {
                     focusedTextColor = TextDarkGray,
                     unfocusedTextColor = TextDarkGray
                 ),
-                textStyle = medium16
+                textStyle = AppTypography.bodyMedium
             )
 
             // 드롭다운 메뉴
@@ -459,7 +457,7 @@ fun MapScreen() {
                         text = {
                             Text(
                                 text = item,
-                                style = medium16,
+                                style = AppTypography.bodyMedium,
                                 color = TextDarkGray
                             )
                         },
