@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.ui.screens.*
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,7 +127,7 @@ fun BottomNavigationBar(navController: NavController) {
                             Text(
                                 text = item.title,
                                 color = if (isSelected) MainNavy else MainNavy.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.bodyMedium
+                                style = AppTypography.labelMedium
                             )
                         }
                     },
