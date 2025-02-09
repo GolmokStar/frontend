@@ -1,9 +1,11 @@
 package com.example.golmokstar.ui.screens
 
+import android.graphics.BlurMaskFilter.Blur
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -46,27 +48,27 @@ data class History(
 
 val samplePlaces = listOf(
     Place(
-        name = "서울 남산타워",
+        name = "남산타워",
         address = "서울특별시 용산구",
         imageUrl = "https://source.unsplash.com/400x300/?seoul,tower"
     ),
     Place(
-        name = "부산 해운대 해수욕장",
+        name = "해운대 해수욕장",
         address = "부산광역시 해운대구",
         imageUrl = "https://source.unsplash.com/400x300/?beach,ocean"
     ),
     Place(
-        name = "제주 성산일출봉",
+        name = "성산일출봉",
         address = "제주도 서귀포시",
         imageUrl = "https://source.unsplash.com/400x300/?jeju,mountain"
     ),
     Place(
-        name = "강릉 안목해변",
+        name = "안목해변",
         address = "강원도 강릉시",
         imageUrl = "https://source.unsplash.com/400x300/?cafe,beach"
     ),
     Place(
-        name = "전주 한옥마을",
+        name = "한옥마을",
         address = "전라북도 전주시 완산구",
         imageUrl = "https://source.unsplash.com/400x300/?hanok,village"
     )
@@ -74,7 +76,7 @@ val samplePlaces = listOf(
 
 val sampleHistories = listOf(
     History(
-        name = "서울 올림픽공원",
+        name = "올림픽공원",
         address = "서울특별시 송파구",
         imageUrl = "https://source.unsplash.com/400x300/?seoul,park",
         rating = 4.7,
@@ -83,7 +85,7 @@ val sampleHistories = listOf(
         date = "2025.03.10"
     ),
     History(
-        name = "경주 불국사",
+        name = "불국사",
         address = "경상북도 경주시",
         imageUrl = "https://source.unsplash.com/400x300/?temple,kyongju",
         rating = 4.9,
@@ -92,7 +94,7 @@ val sampleHistories = listOf(
         date = "2025.04.05"
     ),
     History(
-        name = "강원도 평창",
+        name = "평창",
         address = "강원도 평창군",
         imageUrl = "https://source.unsplash.com/400x300/?mountain,pyeongchang",
         rating = 4.8,
@@ -101,16 +103,16 @@ val sampleHistories = listOf(
         date = "2025.02.25"
     ),
     History(
-        name = "서울 북촌 한옥마을",
+        name = "북촌 한옥마을",
         address = "서울특별시 종로구",
         imageUrl = "https://source.unsplash.com/400x300/?hanok,seoul",
         rating = 4.6,
-        title = "북촌 한옥마을 탐방",
+        title = "한옥마을 탐방",
         content = "북촌 한옥마을에서 전통적인 분위기를 느꼈다. 한옥의 아름다움과 조용한 골목이 마음에 들었다.",
         date = "2025.05.12"
     ),
     History(
-        name = "전주 덕진공원",
+        name = "덕진공원",
         address = "전라북도 전주시 덕진구",
         imageUrl = "https://source.unsplash.com/400x300/?park,jeonju",
         rating = 4.4,
@@ -130,7 +132,7 @@ fun HomeScreen() {
 
     val scrollState = rememberScrollState()
 
-    val count = 0
+    val count = 3
 
     Column(
         verticalArrangement = Arrangement.spacedBy(35.dp),
@@ -213,13 +215,15 @@ fun CheckIconTextField(value: String, onValueChange: (String) -> Unit) {
         trailingIcon = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                
             ) {
                 VerticalDivider(
                     color = IconGray, modifier = Modifier
                         .height(32.dp) // 선 높이
                         .width(1.dp) // 선 너비
                 )
-                Spacer(modifier = Modifier.width(8.dp)) // 선과 아이콘 사이 간격
+                Spacer(modifier = Modifier.width(10.dp)) // 선과 아이콘 사이 간격
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = "Check Icon",
@@ -227,7 +231,7 @@ fun CheckIconTextField(value: String, onValueChange: (String) -> Unit) {
                 )
             }
         },
-        textStyle = TextStyle(color = TextBlack, fontSize = 16.sp),
+        textStyle = TextStyle(color = TextBlack),
         shape = RoundedCornerShape(10.dp),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = White,
@@ -270,7 +274,7 @@ fun RecentHistoryPlace(count: Int = 0) {
             contentPadding = PaddingValues(horizontal = 20.dp)
         ) {
             items(sampleHistories.toList()) { history ->
-                HistoryCard(history, false)
+                HistoryCard(history)
             }
         }
 
@@ -312,22 +316,30 @@ fun PlaceCard(place: Place) {
 }
 
 @Composable
-fun HistoryCard(history: History, click: Boolean) {
+fun HistoryCard(history: History) {
+    var isClicked by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .width(200.dp)
-            .height(270.dp),
+            .height(270.dp)
+            .clickable { isClicked = !isClicked },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Gray
         )
     ) {
-        Column(
-            modifier = Modifier.padding(5.dp)
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
-            NameCard(history)
+        if (!isClicked) {
+            Column(
+                modifier = Modifier.padding(5.dp)
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                NameCard(history)
+            }
+        } else {
+            OverCard(history)
         }
+
 
     }
 }
@@ -392,33 +404,115 @@ fun NameCard(data: Any) {
                         .fillMaxHeight(),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
                         Text(
                             text = data.name,
                             color = White,
-                            style = AppTypography.labelMedium
-                        )
-                        Text(text = data.title, color = White, style = AppTypography.labelLarge)
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        //ImageVector.vectorResource(id = R.drawable.home_icon)
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.location_icon),
-                            contentDescription = "Location",
-                            tint = TextLightGray
+                            style = AppTypography.bodyMedium
                         )
                         Text(
-                            text = data.address,
+                            text = data.title,
                             color = TextLightGray,
-                            style = AppTypography.labelMedium
+                            style = AppTypography.labelLarge
                         )
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    )
+                    {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            //ImageVector.vectorResource(id = R.drawable.home_icon)
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.location_icon),
+                                contentDescription = "Location",
+                                tint = TextLightGray
+                            )
+                            Text(
+                                text = data.address,
+                                color = TextLightGray,
+                                style = AppTypography.labelMedium
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+
+                            ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.star_icon),
+                                contentDescription = "Star",
+                                tint = TextLightGray
+
+                            )
+                            Text(
+                                text = data.rating.toString(),
+                                color = TextLightGray,
+                                style = AppTypography.labelMedium
+                            )
+                        }
+                    }
+
+
                 }
             }
         }
     }
+}
+
+
+@Composable
+fun OverCard(history: History) {
+    Card(
+        modifier = Modifier
+            .fillMaxSize(), colors = CardDefaults.cardColors(BlurBackgroundGray)
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement =  Arrangement.spacedBy(10.dp),) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = history.name, color = White, style = AppTypography.bodyMedium)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.star_icon),
+                        contentDescription = "Star",
+                        tint = White
+                    )
+                    Text(
+                        text = history.rating.toString(),
+                        color = White,
+                        style = AppTypography.labelMedium
+                    )
+                }
+            }
+
+            Text(text = history.address, color = TextLightGray, style = AppTypography.labelMedium)
+            Text(text = history.content, color = White, style = AppTypography.labelMedium, modifier = Modifier.weight(1f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = history.title, color = TextLightGray, style = AppTypography.labelMedium)
+                Text(text = history.date, color = TextLightGray, style = AppTypography.labelMedium)
+            }
+
+        }
+
+    }
+
 
 }
