@@ -67,6 +67,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("androidx.datastore:datastore-preferences:1.1.2")  // DataStore 라이브러리
     implementation("androidx.compose.material:material-icons-extended:1.7.7")
+    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
+
+
 
 
 }
