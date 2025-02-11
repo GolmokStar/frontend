@@ -16,32 +16,26 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Update
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -56,20 +50,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
-import com.example.golmokstar.ui.theme.MarkerBlue
-import com.example.golmokstar.ui.theme.MarkerRed
-import com.example.golmokstar.ui.theme.MarkerYellow
+import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
 import com.google.android.gms.location.LocationCallback
@@ -90,20 +78,20 @@ import com.google.maps.android.compose.rememberCameraPositionState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen() {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("전체") }
-    val items = listOf("옵션 1", "옵션 2", "옵션 3")
-
     val context = LocalContext.current
     val dataStore = DataStoreModule(context)
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    val activity = context as? Activity
+
+    var expanded by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf("전체") }
+    val items = listOf("옵션 1", "옵션 2", "옵션 3")
 
     var currentLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var savedLatitude by remember { mutableDoubleStateOf(0.0) }
     var savedLongitude by remember { mutableDoubleStateOf(0.0) }
     var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
     var selectedAddress by remember { mutableStateOf("") }
-
     var showLocationBox by remember { mutableStateOf(false) } // 박스 열기/닫기 상태 추가
     var permissionGranted by remember { mutableStateOf(false) } // 권한이 허용되었는지 여부
 
@@ -140,42 +128,20 @@ fun MapScreen() {
     }
 
     // 권한 체크 후 실시간 위치 가져오기
-    val activity = context as? Activity // Activity 캐스팅 (안전하게)
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        permissionGranted = isGranted // 권한 허용 여부 상태 업데이트
-        if (isGranted) {
-            // 권한이 허용되었을 때 위치 업데이트 요청
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
-        } else {
-            Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-        }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission())
+    { isGranted -> permissionGranted = isGranted // 권한 허용 여부 상태 업데이트
+        // 권한이 허용되었을 때 위치 업데이트 요청
+        if (isGranted) { fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper()) }
+        else { Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show() }
     }
 
     // 권한 체크 후 실시간 위치 가져오기
     LaunchedEffect(Unit) {
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            permissionGranted = true // 권한이 이미 허용되었으면 상태 업데이트
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
-        } else {
-            // 권한이 허용되지 않으면 permissionLauncher 사용
-            activity?.let {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            } ?: Toast.makeText(context, "권한 요청에 실패했습니다.", Toast.LENGTH_SHORT).show()
-        }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            permissionGranted = true
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        } else { activity?.let { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) } }
     }
 
     // DataStore에서 저장된 위도, 경도 가져오기
@@ -186,40 +152,20 @@ fun MapScreen() {
 
     // 카메라 위치 설정
     val cameraPositionState = rememberCameraPositionState {
-        // currentLocation이 갱신되면 카메라 위치를 자동으로 업데이트
-        if (currentLocation.latitude != 0.0 && currentLocation.longitude != 0.0) {
-            position = CameraPosition.fromLatLngZoom(currentLocation, 17f)
-        }
+        position = CameraPosition.fromLatLngZoom(currentLocation, 17f)
     }
 
     // 위치가 업데이트 될 때마다 카메라 이동
     LaunchedEffect(currentLocation) {
         if (currentLocation.latitude != 0.0 && currentLocation.longitude != 0.0) {
-            cameraPositionState.move(
-                CameraUpdateFactory.newLatLngZoom(currentLocation, 17f)
-            )
+            cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
         }
     }
 
-    val uiSettings = remember {
-        MapUiSettings(
-            myLocationButtonEnabled = false, // 기본 내 위치 버튼을 사용하지 않음
-            zoomControlsEnabled = false,
-            rotationGesturesEnabled = false
-        )
-    }
+    val uiSettings = remember { MapUiSettings(myLocationButtonEnabled = false, zoomControlsEnabled = false, rotationGesturesEnabled = false) }
+    val properties by remember { mutableStateOf(MapProperties(isMyLocationEnabled = true)) }
 
-    val properties by remember {
-        mutableStateOf(
-            MapProperties(
-                isMyLocationEnabled = true
-            )
-        )
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         // 권한이 허용되지 않았으면 지도 렌더링을 하지 않음
         if (permissionGranted) {
             GoogleMap(
@@ -253,131 +199,42 @@ fun MapScreen() {
             }
 
             // 내 위치 버튼 → 오른쪽 하단에 배치
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 16.dp)
-            ) {
-                IconButton(
-                    onClick = {
-                        cameraPositionState.move(
-                            CameraUpdateFactory.newLatLngZoom(currentLocation, 17f)
-                        )
-                    },
-                    modifier = Modifier
-                        .size(40.dp) // 버튼 크기를 키움
-                        .background(Color.White, shape = CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MyLocation,
-                        contentDescription = "내 위치 이동",
-                        modifier = Modifier
-                            .size(25.dp) // 이미지 크기를 적절히 키움
-                    )
-                }
+            FloatingActionButton(onClick = {
+                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
+            }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp), containerColor = White) {
+                Icon(Icons.Default.MyLocation, contentDescription = "내 위치 이동", tint = MainNavy  )
             }
 
             // 선택된 위치 정보 박스
             AnimatedVisibility(
                 visible = selectedMarkerLocation != null,
-                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(initialOffsetY = { it / 2 }),
-                exit = fadeOut(animationSpec = tween(600)) + slideOutVertically(
-                    targetOffsetY = { it / 1 } // 더 천천히 아래로 사라짐
-                )
+                enter = fadeIn(tween(300)) + slideInVertically { it / 2 },
+                exit = fadeOut(tween(600)) + slideOutVertically { it }
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize() // 부모 크기를 가득 채워서 정렬이 정확하게 동작하도록 함
+                        .fillMaxSize()
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.Bottom, // 하단 정렬
-                    horizontalAlignment = Alignment.CenterHorizontally // 중앙 정렬
+                    verticalArrangement = Arrangement.Bottom,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .height(110.dp)
-                            .fillMaxWidth()
-                            .background(Color.White, shape = RoundedCornerShape(12.dp))
-                            .border(1.dp, MarkerRed, RoundedCornerShape(12.dp))
-                            .padding(12.dp)
-                            .clickable {
-                                selectedMarkerLocation = null // 클릭 시 애니메이션과 함께 부드럽게 사라짐
-                            }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                    // RedBox 예시
+                    RedBox(
+                        selectedAddress = selectedAddress,
+                        onBoxClick = { selectedMarkerLocation = null } // 클릭 시 처리
+                    )
 
+                    // YellowBox 예시
+                    YellowBox(
+                        selectedAddress = selectedAddress,
+                        onBoxClick = { selectedMarkerLocation = null } // 클릭 시 처리
+                    )
 
-                                RedMarkerIcon(
-                                    modifier = Modifier.size(15.dp),
-                                )
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                Text(
-                                    text = selectedAddress,
-                                    style = AppTypography.labelMedium,
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                Icon(
-                                    imageVector = Icons.Default.Update,
-                                    tint = MarkerRed,
-                                    contentDescription = "남은 시간",
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-
-                                Text(
-                                    text = "3Day",
-                                    style = AppTypography.bodyMedium,
-                                    color = MarkerRed
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Text("이름", style = AppTypography.bodyMedium)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        "2025.02.08",
-                                        style = AppTypography.labelSmall,
-                                        color = TextDarkGray
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Button(
-                                    onClick = { /* TODO: 버튼 클릭 동작 */ },
-                                    modifier = Modifier
-                                        .height(35.dp)
-                                        .width(90.dp),
-                                    shape = RoundedCornerShape(5.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MarkerRed,
-                                        contentColor = White
-                                    )
-                                ) {
-                                    Text("방문하기", style = AppTypography.bodyMedium, color = White)
-                                }
-                            }
-                        }
-                    }
+                    // BlueBox 예시
+                    BlueBox(
+                        selectedAddress = selectedAddress,
+                        onBoxClick = { selectedMarkerLocation = null } // 클릭 시 처리
+                    )
                 }
             }
 
@@ -386,8 +243,9 @@ fun MapScreen() {
                     .padding(end = 16.dp, top = 16.dp)
                     .size(100.dp, 110.dp)
                     .background(BlurBackgroundGray, shape = RoundedCornerShape(20.dp))
-                    .align(Alignment.TopEnd) // 자식 Box를 오른쪽 상단에 배치
+                    .align(Alignment.TopEnd) // 오른쪽 상단에 배치
             ) {
+
                 Column(
                     modifier = Modifier.fillMaxSize(), // Column이 부모 Box에 맞게 채워지도록 설정
                     verticalArrangement = Arrangement.Center, // 수직 정렬 중앙
@@ -396,65 +254,29 @@ fun MapScreen() {
                     // "찜한 장소" 항목
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp)
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                     ) {
-
-                        RedMarkerIcon(
-                            modifier = Modifier
-                                .size(25.dp)
-                                .padding(start = 8.dp)
-                        )
-
+                        RedMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = "찜한 장소",
-                            color = White,
-                            style = AppTypography.bodyMedium
-                        )
+                        Text(text = "찜한 장소", color = White, style = AppTypography.bodyMedium)
                     }
-
                     // "방문 장소" 항목
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp)
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                     ) {
-                        YellowMarkerIcon(
-                            modifier = Modifier
-                                .size(25.dp)
-                                .padding(start = 8.dp)
-                        )
+                        YellowMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "방문 장소",
-                            color = White,
-                            style = AppTypography.bodyMedium
-
-                        )
+                        Text(text = "방문 장소", color = White, style = AppTypography.bodyMedium)
                     }
-
                     // "기록 장소" 항목
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp)
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                     ) {
-                        BlueMarkerIcon(
-                            modifier = Modifier
-                                .size(25.dp)
-                                .padding(start = 8.dp)
-                        )
+                        BlueMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "기록 장소",
-                            color = White,
-                            style = AppTypography.bodyMedium
-                        )
+                        Text(text = "기록 장소", color = White, style = AppTypography.bodyMedium)
                     }
                 }
             }
@@ -463,12 +285,7 @@ fun MapScreen() {
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = it }, // 드롭다운을 클릭했을 때 열리고 닫히게 함
-                modifier = Modifier
-                    .padding(16.dp)
-                    .width(180.dp)
-                    .height(50.dp)
-                    .align(Alignment.TopStart)
-            ) {
+                modifier = Modifier.padding(16.dp).width(180.dp).height(50.dp).align(Alignment.TopStart)) {
                 OutlinedTextField(
                     value = selectedItem,
                     onValueChange = {}, // 값 변경 불가능하게 설정
@@ -503,13 +320,7 @@ fun MapScreen() {
                 ) {
                     items.forEach { item ->
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = item,
-                                    style = AppTypography.bodyMedium,
-                                    color = TextDarkGray
-                                )
-                            },
+                            text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
                             onClick = {
                                 selectedItem = item
                                 expanded = false // 아이템 클릭 시 드롭다운 닫히게 함
@@ -524,6 +335,4 @@ fun MapScreen() {
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewMapScreen() {
-    MapScreen()
-}
+fun PreviewMapScreen() { MapScreen() }
