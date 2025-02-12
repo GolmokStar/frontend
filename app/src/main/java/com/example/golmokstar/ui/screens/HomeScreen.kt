@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
@@ -153,7 +154,7 @@ fun HomeScreen() {
 
     val scrollState = rememberScrollState()
 
-    val count = 3
+    val count = 1
 
     Column(
         verticalArrangement = Arrangement.spacedBy(35.dp),
@@ -234,7 +235,7 @@ fun CheckIconTextField(
     // FocusRequester 객체 생성
     val focusRequester = remember { FocusRequester() }
 
-    var showCaption by remember { mutableStateOf(false) }
+    var showCaption by remember { mutableStateOf(true) }
 
     var event by remember {
         mutableStateOf(
@@ -375,10 +376,11 @@ fun CheckIconTextField(
                     )
                 }
             }
+            if(showCaption) {
+                Text(text = "* 제목을 입력해주세요", color = ErrorRed, style = AppTypography.labelSmall)
+            }
         }
-        if(showCaption) {
-            Text(text = "* 제목을 입력해주세요", color = ErrorRed, style = AppTypography.labelSmall)
-        }
+
     }
 }
 
@@ -669,7 +671,8 @@ fun NameCard(data: Any) {
                         text = data.name, color = White, style = AppTypography.bodyMedium
                     )
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         //ImageVector.vectorResource(id = R.drawable.home_icon)
                         Icon(
@@ -722,7 +725,8 @@ fun NameCard(data: Any) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             //ImageVector.vectorResource(id = R.drawable.home_icon)
                             Icon(
@@ -797,12 +801,13 @@ fun OverCard(history: History) {
             }
 
             Text(text = history.address, color = TextLightGray, style = AppTypography.labelMedium)
-            Text(
-                text = history.content,
-                color = White,
-                style = AppTypography.labelMedium,
-                modifier = Modifier.weight(1f)
-            )
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = history.content,
+                    color = White,
+                    style = AppTypography.labelMedium,
+                    )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
