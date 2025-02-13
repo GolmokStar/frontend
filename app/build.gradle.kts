@@ -57,8 +57,6 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Kizitonwose Calendar
-    implementation(libs.kizitonwose.calendar)
 
     // 테스트 관련 의존성
     testImplementation(libs.junit)
