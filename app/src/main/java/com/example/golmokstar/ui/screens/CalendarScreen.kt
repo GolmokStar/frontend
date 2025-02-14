@@ -608,7 +608,7 @@ fun ModalTitle(onDismiss: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row {}
+            Row(modifier = Modifier.width(18.dp)) {}
             Text(text = "일기 작성", color = TextBlack, style = AppTypography.bodyLarge)
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.close_icon),
