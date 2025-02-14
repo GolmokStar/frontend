@@ -61,5 +61,7 @@ dependencies {
     // Jetpack Compose Navigation 추가
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended:1.7.7")
+    implementation("com.google.android.gms:play-services-maps:19.0.0") // Google Maps SDK
+
 
 }
