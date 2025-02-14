@@ -739,5 +739,8 @@ fun ModalContent() {
             textAlign = TextAlign.Start
         )
     }
+    else {
+        Text("", style = AppTypography.labelSmall)
+    }
 
 }
