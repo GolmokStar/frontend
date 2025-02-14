@@ -1,7 +1,6 @@
 package com.example.golmokstar.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
@@ -27,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -42,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.golmokstar.ui.theme.AppTypography
-import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.TextLightGray
@@ -84,25 +82,23 @@ val sampleHistories = listOf(
         content = "아제발 너무추웠다... 바람 너무 많이 불고 생각보다 작고 뭐 .. 뭐지 싶었음",
         date = "2025.02.25"
     ), History(
-        name = "",
-        address = "",
+        name = "국립경주박물관",
+        address = "경상북도 경주시",
         imageUrl = "",
-        rating = null,
-        title = "",
+        rating = 4.3,
+        title = "1박 2일 경쥬",
         content = "",
-        date = ""
+        date = "2025.02.25"
     ), History(
-        name = "",
+        name = "동리",
         address = "",
         imageUrl = "",
-        rating = null,
+        rating = 4.8,
         title = "",
         content = "",
         date = ""
     )
 )
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -110,92 +106,115 @@ val sampleHistories = listOf(
 fun HistoryScreen() {
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("전체") }
-    val items = listOf("옵션 1", "옵션 2", "옵션 3")
 
     var selectedAddress by remember { mutableStateOf("") }
 
     val scrollState = rememberScrollState()
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(scrollState) // 전체 스크롤 가능하게 하기
     ) {
         // 드롭다운 메뉴
-        ExposedDropdownMenuBox(
+        DropdownMenuSection(
             expanded = expanded,
             onExpandedChange = { expanded = it },
+            selectedItem = selectedItem,
+            onItemSelect = { selectedItem = it },
             modifier = Modifier
                 .width(180.dp)
                 .height(50.dp)
                 .padding(start = 30.dp)
-        ) {
-            OutlinedTextField(
-                value = selectedItem,
-                onValueChange = {},
-                readOnly = true,
-                shape = RoundedCornerShape(12.dp),
-                trailingIcon = {
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                            contentDescription = "드롭다운 열기",
-                            tint = IconGray
-                        )
-                    }
-                },
-                modifier = Modifier.menuAnchor(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = White,
-                    focusedBorderColor = IconGray,
-                    unfocusedBorderColor = IconGray,
-                    focusedTextColor = TextDarkGray,
-                    unfocusedTextColor = TextDarkGray
-                ),
-                textStyle = AppTypography.bodyMedium,
-            )
 
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.background(White)
-            ) {
-                items.forEach { item ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = item,
-                                style = AppTypography.bodyMedium,
-                                color = TextDarkGray
-                            )
-                        },
-                        onClick = {
-                            selectedItem = item
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
+        )
 
-            // 드롭다운과 RedBox 사이에 20dp 간격 추가
-            Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         NavyBox(
             selectedAddress = selectedAddress,
-            onBoxClick = { } ,
-            modifier = Modifier.width(330.dp)// 클릭 시 처리
+            onBoxClick = { },
+            modifier = Modifier.width(330.dp)
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth().weight(1f)
         ) {
             items(sampleHistories) { history ->
-                HistoryCard(history)
+                if (history.content.isNotEmpty()) {
+                    OverCard(history)
+                } else {
+                    HistoryCard(history)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DropdownMenuSection(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    selectedItem: String,
+    onItemSelect: (String) -> Unit,
+    modifier: Modifier = Modifier // modifier 매개변수 추가
+) {
+    val items = listOf("옵션 1", "옵션 2", "옵션 3")
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedItem,
+            onValueChange = {},
+            readOnly = true,
+            shape = RoundedCornerShape(12.dp),
+            trailingIcon = {
+                IconButton(onClick = { onExpandedChange(!expanded) }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                        contentDescription = "드롭다운 열기",
+                        tint = IconGray
+                    )
+                }
+            },
+            modifier = Modifier.menuAnchor(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                containerColor = White,
+                focusedBorderColor = IconGray,
+                unfocusedBorderColor = IconGray,
+                focusedTextColor = TextDarkGray,
+                unfocusedTextColor = TextDarkGray
+            ),
+            textStyle = AppTypography.bodyMedium,
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) },
+            modifier = Modifier.background(White)
+        ) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = item,
+                            style = AppTypography.bodyMedium,
+                            color = TextDarkGray
+                        )
+                    },
+                    onClick = {
+                        onItemSelect(item)
+                        onExpandedChange(false)
+                    }
+                )
             }
         }
     }
@@ -205,51 +224,44 @@ fun HistoryScreen() {
 @Composable
 fun HistoryCard(history: History) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally // 수평 중앙 정렬
+        modifier = Modifier.fillMaxWidth(),  // ✅ 추가
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (history.content.isNotEmpty()) {
-            OverCard(history) // 데이터가 있으면 OverCard 기본 표시
-        } else {
-            // 데이터가 없으면 기본 카드 표시
-            Card(
-                modifier = Modifier
-                    .width(300.dp)
-                    .height(170.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Gray
-                ),
-            ) {}
+        // 기본 카드
+        Card(
+            modifier = Modifier
+                .width(330.dp)
+                .height(170.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Gray
+            ),
+        ) {}
 
-            // 카드 아래에 기본 메시지 표시
-            Spacer(modifier = Modifier.height(10.dp)) // 카드와 텍스트 사이 간격 추가
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.width(330.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = history.name, color = Color.Black, style = AppTypography.labelMedium)
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "별 아이콘",
+                    tint = Color.Black
+                )
+
                 Text(
-                    text = history.title,
+                    text = history.rating.toString(),
                     color = Color.Black,
                     style = AppTypography.labelMedium
                 )
-
-                Spacer(modifier = Modifier.height(5.dp)) // 텍스트와 아이콘 사이 간격
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "별점",
-                        tint = Color.Black // 별 아이콘 색상 변경
-                    )
-
-                    Text(
-                        text = history.rating.toString(), // Double 값을 String으로 변환
-                        color = Color.Black, // 수정된 부분
-                        style = AppTypography.labelMedium
-                    )
-                }
             }
         }
     }
@@ -257,66 +269,93 @@ fun HistoryCard(history: History) {
 
 @Composable
 fun OverCard(history: History) {
-    Card(
-        modifier = Modifier.fillMaxSize(), colors = CardDefaults.cardColors(BlurBackgroundGray)
+    Column(
+        modifier = Modifier.fillMaxWidth(),  // ✅ 추가
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+        // OverCard
+        Card(
+            modifier = Modifier
+                .width(330.dp)
+                .height(170.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Gray
+            )
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(text = history.name, color = White, style = AppTypography.bodyMedium)
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = history.name, color = White, style = AppTypography.bodyMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Text(
+                            text = history.address,
+                            color = TextLightGray,
+                            style = AppTypography.labelMedium
+                        )
+                    }
+                }
+
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = history.content,
+                        color = White,
+                        style = AppTypography.labelMedium,
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = history.address,
+                        text = history.title,
+                        color = TextLightGray,
+                        style = AppTypography.labelMedium
+                    )
+                    Text(
+                        text = history.date,
                         color = TextLightGray,
                         style = AppTypography.labelMedium
                     )
                 }
             }
+        }
 
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.width(330.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = history.name, color = Color.Black, style = AppTypography.labelMedium)
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "별 아이콘",
+                    tint = Color.Black
+                )
+
                 Text(
-                    text = history.content,
-                    color = White,
-                    style = AppTypography.labelMedium,
+                    text = history.rating.toString(),
+                    color = Color.Black,
+                    style = AppTypography.labelMedium
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = history.title, color = TextLightGray, style = AppTypography.labelMedium)
-                Text(text = history.date, color = TextLightGray, style = AppTypography.labelMedium)
-            }
-        }
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = history.name, color = Color.Black, style = AppTypography.labelMedium)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            Icon(Icons.Default.Star)
-
-            Text(
-                text = history.rating.toString(),
-                color = Color.Black,
-                style = AppTypography.labelMedium
-            )
         }
     }
 }
