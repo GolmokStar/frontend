@@ -33,15 +33,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.AppTypography
-import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy
-import com.example.golmokstar.ui.theme.TextBlack
 import com.example.golmokstar.ui.theme.TextDarkGray
-import com.example.golmokstar.ui.theme.TextLightGray
 import com.example.golmokstar.ui.theme.White
-import java.sql.Date
-
-val category = listOf("음식", "액티비티", "문화예술", "자연", "쇼핑", "힐링")
 
 
 @Preview
@@ -139,7 +133,7 @@ fun BirthdateField(birthdate: String, onChange: (String) -> Unit) {
                     contentAlignment = Alignment.CenterStart
                 ) {
                     if (birthdate.isEmpty()) {
-                        Text("YYYY/MM/DD", color = TextDarkGray, style = AppTypography.bodyMedium)
+                        Text("YYYY / MM / DD", color = TextDarkGray, style = AppTypography.bodyMedium)
                     }
                     innerTextField() // 실제 텍스트 입력 필드
                 }
