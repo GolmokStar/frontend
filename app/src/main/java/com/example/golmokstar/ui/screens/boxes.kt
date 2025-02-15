@@ -50,7 +50,8 @@ fun ColorBox(
     showButton: Boolean = true, // 버튼을 표시할지 말지를 결정
     extraText: String? = null, // 추가된 부분: extraText를 전달받아 표시
     name: String, // 추가된 이름
-    date: String // 추가된 날짜
+    date: String, // 추가된 날짜
+    onButtonClick: () -> Unit
 
 ) {
     Box(
@@ -95,7 +96,7 @@ fun ColorBox(
                 if (showButton) { // 버튼이 표시될 때만 렌더링
                     Spacer(Modifier.width(8.dp))
                     Button(
-                        onClick = { /* TODO: 버튼 클릭 동작 */ },
+                        onClick = { onButtonClick() },
                         modifier = Modifier.height(35.dp).width(90.dp),
                         shape = RoundedCornerShape(5.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = White),
@@ -116,6 +117,7 @@ fun RedBox(
     onBoxClick: () -> Unit,
     name: String,
     date: String,
+    onButtonClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ColorBox(
@@ -130,7 +132,8 @@ fun RedBox(
         onBoxClick = onBoxClick,
         showButton = true,
         name = name, // 이름을 전달
-        date = date // 날짜를 전달
+        date = date,
+        onButtonClick = onButtonClick
     )
 }
 
@@ -141,6 +144,7 @@ fun YellowBox(
     name: String,
     date: String,
     topLeftText: String,
+    onButtonClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ColorBox(
@@ -156,7 +160,8 @@ fun YellowBox(
         showButton = true, // 버튼을 표시
         extraText = "",
         name = name, // 이름을 전달
-        date = date // 날짜를 전달
+        date = date,
+        onButtonClick = onButtonClick
     )
 }
 
@@ -166,6 +171,7 @@ fun BlueBox(
     onBoxClick: () -> Unit,
     name: String,
     date: String,
+    onButtonClick: () -> Unit,
     extraText: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -182,7 +188,8 @@ fun BlueBox(
         showButton = false, // 버튼을 숨김
         extraText = extraText,
         name = name, // 이름을 전달
-        date = date // 날짜를 전달
+        date = date,
+        onButtonClick = onButtonClick
     )
 }
 
@@ -193,6 +200,7 @@ fun NavyBox(
     name: String,
     date: String,
     topLeftText: String,
+    onButtonClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ColorBox(
@@ -208,7 +216,7 @@ fun NavyBox(
         showButton = true, // 버튼을 표시
         extraText = "",
         name = name, // 이름을 전달
-        date = date // 날짜를 전달
-
+        date = date, // 날짜를 전달
+        onButtonClick = onButtonClick
     )
 }
