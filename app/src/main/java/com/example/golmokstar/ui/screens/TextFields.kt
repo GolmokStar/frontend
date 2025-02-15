@@ -109,6 +109,14 @@ fun Screen() {
                 }
             },
         )
+        TravelDateField(travelPlan.startDate, onChange = {travelPlan = travelPlan.copy(startDate = it)})
+        TravelDateField(travelPlan.endDate, onChange = {travelPlan = travelPlan.copy(endDate = it)})
+
+        Text(travelPlan.title)
+        Text(travelPlan.startDate)
+        Text(travelPlan.endDate)
+        Text(currentState.toString())
+        Text(currentError.toString())
     }
 }
 
@@ -287,6 +295,54 @@ fun TravelTitleField(
                         }
                     }
                 )
+            }
+        }
+    )
+}
+
+
+@Composable
+fun TravelDateField(date: String, onChange: (String) -> Unit) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    BasicTextField(
+        value = date,
+        onValueChange = { newValue ->
+            val digitsOnly = newValue.filter { it.isDigit() }
+            if (digitsOnly.length <= 8) {
+                onChange(digitsOnly)
+            }
+        },
+        textStyle = AppTypography.bodyMedium,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+        ), // 숫자 키보드
+        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
+        visualTransformation = DateTransformation(),
+        decorationBox = { innerTextField ->
+            Row(
+                Modifier
+                    .width(150.dp)
+                    .height(44.dp)
+                    .background(White, RoundedCornerShape(10.dp))
+                    .border(1.dp, MainNavy, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f), // 입력 필드 확장
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (date.isEmpty()) {
+                        Text(
+                            "YYYY / MM / DD",
+                            color = TextDarkGray,
+                            style = AppTypography.bodyMedium
+                        )
+                    }
+                    innerTextField() // 실제 텍스트 입력 필드
+                }
             }
         }
     )
