@@ -25,7 +25,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -770,10 +769,7 @@ fun FriendsAddDialog(
                     shape = RoundedCornerShape(15.dp),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = MainNavy, // 포커스 상태일 때 아웃라인 색상
-                        unfocusedBorderColor = MainNavy, // 포커스가 아닐 때 아웃라인 색상
-                        cursorColor = MainNavy, // 커서 색상
-                        focusedLabelColor = MainNavy, // 포커스 상태일 때 라벨 색상
-                        unfocusedLabelColor = MainNavy // 포커스가 아닐 때 라벨 색상
+                        unfocusedBorderColor = MainNavy // 포커스가 아닐 때 아웃라인 색상
                     )
                 )
 
