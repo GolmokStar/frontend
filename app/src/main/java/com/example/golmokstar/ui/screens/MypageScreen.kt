@@ -48,7 +48,7 @@ import com.example.golmokstar.ui.theme.White
 
 @Composable
 fun MyPageScreen() {
-    var showBellPopup by remember { mutableStateOf(false) } // 팝업 상태
+    var showBellPopup by remember { mutableStateOf(false) }
     val friendRequests = listOf("문희삼사오육", "어쩌구", "저쩌", "구우", "블라블라") // 친구 요청 목록
 
     Column(modifier = Modifier.fillMaxSize().background(White)) {
@@ -57,10 +57,9 @@ fun MyPageScreen() {
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
         ) {
-            // 상단 바 (마이페이지 + 알림 버튼)
             MyPageTopBar(onBellClick = { showBellPopup = !showBellPopup })
 
-            // 친구 요청 팝업
+            // 친구 요청 목록 팝업
             if (showBellPopup) {
                 FriendRequestPopup(
                     friendRequests = friendRequests,
@@ -86,11 +85,11 @@ fun MyPageTopBar(onBellClick: () -> Unit) {
         Text(
             text = "마이페이지",
             style = AppTypography.titleMedium,
-            modifier = Modifier.weight(1f) // 텍스트가 가로로 남은 공간 차지
+            modifier = Modifier.weight(1f)
         )
 
         Icon(
-            painter = painterResource(id = R.drawable.bell), // 알림 아이콘
+            painter = painterResource(id = R.drawable.bell),
             contentDescription = "알림",
             modifier = Modifier
                 .size(24.dp)
@@ -199,7 +198,7 @@ fun FriendRequestButtons(friendRequest: String) {
             },
             shape = RoundedCornerShape(50.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MainNavy),
-            border = BorderStroke(2.dp, MainNavy),
+            border = BorderStroke(1.dp, MainNavy),
             modifier = Modifier
                 .width(50.dp)
                 .height(25.dp),
@@ -284,7 +283,7 @@ fun ProfileBox(travelCount: Int = 0) {
                                 modifier = Modifier.padding(top = 10.dp)
                             )
 
-                            // 수정 모드 : 여행 스타일 선택
+                            // 수정 : 여행 스타일 선택
                             Column(modifier = Modifier.padding(top = 15.dp)) {
                                 val travelStyles = listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑")
 
@@ -304,17 +303,17 @@ fun ProfileBox(travelCount: Int = 0) {
                                                     }
                                                 },
                                                 modifier = Modifier
-                                                    .size(50.dp, 20.dp) // 스타일 버튼 크기 조정
+                                                    .size(50.dp, 20.dp)
                                                     .clip(RoundedCornerShape(30.dp))
                                                     .border(
                                                         width = 1.dp,
                                                         color = if (selectedStyles.contains(style)) MainNavy else Color.Transparent, // 선택되지 않은 버튼에만 테두리
-                                                        shape = RoundedCornerShape(30.dp) // 버튼에 둥근 모서리 추가
+                                                        shape = RoundedCornerShape(30.dp)
                                                     )
                                                     .padding(0.dp),
                                                 colors = ButtonDefaults.buttonColors(
-                                                    if (selectedStyles.contains(style)) Color.White else MainNavy, // 선택된 버튼은 흰색, 아니면 MainNavy
-                                                    contentColor = if (selectedStyles.contains(style)) MainNavy else Color.White // 선택된 버튼은 MainNavy, 아니면 흰색
+                                                    if (selectedStyles.contains(style)) Color.White else MainNavy, // 버튼
+                                                    contentColor = if (selectedStyles.contains(style)) MainNavy else Color.White // 내용
                                                 ),
                                                 contentPadding = PaddingValues(0.dp)
                                             ) {
@@ -500,7 +499,7 @@ fun FriendsListTitle() {
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
-                    painter = painterResource(id = R.drawable.invite_link),
+                    painter = painterResource(id = R.drawable.link_icon),
                     contentDescription = "친구초대",
                     tint = TextDarkGray,
                     modifier = Modifier.size(12.dp)
@@ -512,12 +511,12 @@ fun FriendsListTitle() {
 
 @Composable
 fun FriendsListScreen() {
-    val friends: List<Friend> = listOf(
-        Friend("여섯글자이름", listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑"), 2),
-        Friend("연주", listOf("음식", "문화예술"), 10),
-        Friend("문희", listOf("문화예술"), 3),
-        Friend("승민", listOf("음식", "액티비티", "쇼핑"), 0),
-        Friend("어쩌구다", listOf("액티비티", "힐링", "자연", "쇼핑", "문화예술"), 331)
+    val friends: List<MpFriend> = listOf(
+        MpFriend("여섯글자이름", listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑"), 2),
+        MpFriend("연주", listOf("음식", "문화예술"), 10),
+        MpFriend("문희", listOf("문화예술"), 3),
+        MpFriend("승민", listOf("음식", "액티비티", "쇼핑"), 0),
+        MpFriend("어쩌구다", listOf("액티비티", "힐링", "자연", "쇼핑", "문화예술"), 331)
     )
 
     var showDialog by remember { mutableStateOf(false) }
@@ -545,7 +544,7 @@ fun FriendsListScreen() {
     }
 }
 
-data class Friend(
+data class MpFriend(
     val name: String,
     val styles: List<String>,
     val travelCount: Int
@@ -703,13 +702,10 @@ fun FriendsAddDialog(
     onDismiss: () -> Unit,
     onFriendRequest: (String) -> Unit
 ) {
-    // 팝업 내부에 사용할 상태 변수
     var membershipNumber by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
-    Dialog(
-        onDismissRequest = onDismiss
-    ) {
+    Dialog(onDismissRequest = onDismiss) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -850,6 +846,7 @@ fun MyPageScreenPreview() {
             .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
         MyPageScreen()
+
     }
 }
 
