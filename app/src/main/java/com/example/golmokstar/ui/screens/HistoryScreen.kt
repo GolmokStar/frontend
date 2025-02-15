@@ -1,9 +1,11 @@
 package com.example.golmokstar.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,8 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
@@ -58,7 +61,6 @@ import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy
-import com.example.golmokstar.ui.theme.StarYellow
 import com.example.golmokstar.ui.theme.TextBlack
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.TextLightGray
@@ -109,12 +111,12 @@ val samplehistorydata = listOf(
         date = "2025.02.25"
     ), Sampledata(
         name = "동리",
-        address = "",
+        address = "경상북도 경주시",
         imageUrl = "",
         rating = 4.8,
-        title = "",
+        title = "1박 2일 경쥬",
         content = "",
-        date = ""
+        date = "2025.02.25"
     )
 )
 
@@ -131,6 +133,7 @@ fun HistoryScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(color = White)
             .padding(horizontal = 20.dp, vertical = 16.dp) // 좌우 20dp 패딩, 상단 16dp 패딩
     ) {
         item {
@@ -360,19 +363,20 @@ fun Report(showDialog: Boolean, onDismiss: () -> Unit) {
 
                     PhotoAdd()
 
-                    var ratings = remember { mutableStateOf(List(5) { 0f }) } // List<Float>로 수정
+                    Spacer(Modifier.height(5.dp))
+
+                    // 별점을 위한 상태 관리
+                    var rating by remember { mutableFloatStateOf(0f) } // 현재 별점 상태
 
                     // 별점 표시
                     StarRatingBar(
-                        rating = ratings.value.average().toFloat(), // 리스트 값의 평균을 별점으로 표시
-                        onRatingChange = { newRating ->
-                            // 새로운 별점을 설정할 때
-                            ratings.value = List(ratings.value.size) { newRating }  // 모든 별점을 새로운 값으로 업데이트
-                        },
-                        fullStar = R.drawable.star_icon, // 가득 찬 별 아이콘
-                        halfStar = R.drawable.star_icon, // 반쪽 별 아이콘
-                        emptyStar = R.drawable.star_icon // 빈 별 아이콘
+                        onRatingChange = { newRating -> rating = newRating }, // 별점 변경 시 업데이트
+                        fullStar = R.drawable.fullstar_icon, // 가득 찬 별 아이콘
+                        halfStar = R.drawable.halfstar_icon, // 반쪽 별 아이콘
+                        emptyStar = R.drawable.emptystar_icon // 빈 별 아이콘
                     )
+
+                    Spacer(Modifier.height(5.dp))
 
                     RecordContent()
 
@@ -396,10 +400,7 @@ fun Report(showDialog: Boolean, onDismiss: () -> Unit) {
                             Text("완료", color = White, style = AppTypography.bodyMedium)
                         }
                     }
-
-
                 }
-
             }
         }
     }
@@ -436,13 +437,13 @@ fun PhotoAdd() {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("사진 선택", color = TextBlack, style = AppTypography.bodyMedium)
         Box(
-            modifier = Modifier.fillMaxWidth().height(170.dp).border(1.dp, MainNavy, RoundedCornerShape(20.dp)),
+            modifier = Modifier.fillMaxWidth().height(153.dp).border(1.dp, MainNavy, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
             ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) { // 세로 정렬
                 Text(
                     text = "클릭해서 사진 추가하기",
-                    color = TextLightGray,
+                    color = TextDarkGray,
                     style = AppTypography.bodyLarge
                 )
 
@@ -450,7 +451,7 @@ fun PhotoAdd() {
 
                 Text(
                     text = "사진을 추가하지 않으면\n기본이미지가 등록됩니다.",
-                    color = TextLightGray,
+                    color = TextDarkGray,
                     style = AppTypography.labelMedium,
                     textAlign = TextAlign.Center // 텍스트 중앙 정렬
                 )
@@ -461,31 +462,55 @@ fun PhotoAdd() {
 
 @Composable
 fun StarRatingBar(
-    rating: Float, // 현재 별점
-    onRatingChange: (Float) -> Unit, // 별점 변경 콜백
-    fullStar: Int, // 가득 찬 별 아이콘 (리소스 ID)
-    halfStar: Int, // 반쪽 별 아이콘 (리소스 ID)
-    emptyStar: Int, // 빈 별 아이콘 (리소스 ID)
+    onRatingChange: (Float) -> Unit,
+    fullStar: Int,
+    halfStar: Int,
+    emptyStar: Int,
     modifier: Modifier = Modifier,
-    isEditable: Boolean = true // 읽기 전용 여부
+    isEditable: Boolean = true
 ) {
+    var rating by remember { mutableStateOf(0f) } // 전체 별점 상태
+
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         for (i in 1..5) { // 5개의 별 생성
-            val starValue = i.toFloat()
-            val iconRes  = when {
-                rating >= starValue -> fullStar // 가득 찬 별
-                rating >= starValue - 0.5f -> halfStar // 반쪽 별
-                else -> emptyStar // 빈 별
-            }
+            val starValue = i * 1f // 1, 2, 3, 4, 5 별 값
 
-            Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = "별점 $starValue",
+            Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clickable(enabled = isEditable) { onRatingChange(starValue) },
-                colorFilter = ColorFilter.tint(StarYellow)
-            )
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            val clickPosition = offset.x / 32.dp.toPx() // 클릭 위치 계산
+
+                            // 각 별에 대한 범위와 점수 설정
+                            val starRating = when {
+                                clickPosition <= 0.2f -> i - 1f // 0.0 ~ 0.2 범위 -> 0.0, 1.0, 2.0...
+                                clickPosition <= 0.7f -> i - 0.5f // 0.2 ~ 0.7 범위 -> 0.5, 1.5, 2.5...
+                                else -> i.toFloat() // 0.7 ~ 1.0 범위 -> 1.0, 2.0, 3.0...
+                            }
+
+                            rating = starRating // 점수 설정
+                            onRatingChange(rating) // 별점 변경 콜백
+
+                            Log.d("StarRating", "Clicked Position: $clickPosition, Rating: $rating")
+
+                        }
+                    }
+            ) {
+                // 별을 표시하는 이미지 (빈 별, 반 별, 가득 찬 별 등)
+                val iconRes = when {
+                    rating >= i -> fullStar // 가득 찬 별
+                    rating >= i - 0.5f -> halfStar // 반쪽 별
+                    else -> emptyStar // 빈 별
+                }
+
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = "별점 $starValue",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Spacer(Modifier.width(10.dp))
         }
     }
 }
@@ -501,7 +526,7 @@ fun RecordContent() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("내용 작성", color = TextBlack, style = AppTypography.bodyMedium,)
+        Text("내용 작성", color = TextBlack, style = AppTypography.bodyMedium)
     }
 
     OutlinedTextField(
@@ -510,18 +535,18 @@ fun RecordContent() {
         modifier = Modifier
             .fillMaxWidth()
             .height(173.dp)
-            .border(1.dp, MainNavy, RoundedCornerShape(20.dp)),
+            .border(1.dp, MainNavy, RoundedCornerShape(10.dp)), // 추가된 테두리만 사용
         textStyle = AppTypography.labelMedium,
         placeholder = {
             Text(
                 "방문한 장소는 어떠셨나요? 후기를 입력해주세요!",
-                color = TextLightGray,
+                color = TextDarkGray,
                 style = AppTypography.labelMedium
             )
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = MainNavy,
-            unfocusedBorderColor = MainNavy,
+            focusedBorderColor = MainNavy, // 기본 테두리 색을 투명하게 설정
+            unfocusedBorderColor = MainNavy, // 기본 테두리 색을 투명하게 설정
         )
     )
 }
