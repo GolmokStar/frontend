@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.golmokstar.ui.theme.AppTypography
+import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.MarkerBlue
 import com.example.golmokstar.ui.theme.MarkerRed
 import com.example.golmokstar.ui.theme.MarkerYellow
@@ -37,7 +38,7 @@ import com.example.golmokstar.ui.theme.White
 
 @Composable
 fun ColorBox(
-    selectedAddress: String,
+    address: String,
     icon: @Composable () -> Unit,
     borderColor: Color,
     buttonColor: Color,
@@ -47,7 +48,11 @@ fun ColorBox(
     topLeftText: String,
     onBoxClick: () -> Unit,
     showButton: Boolean = true, // 버튼을 표시할지 말지를 결정
-    extraText: String? = null // 추가된 부분: extraText를 전달받아 표시
+    extraText: String? = null, // 추가된 부분: extraText를 전달받아 표시
+    name: String, // 추가된 이름
+    date: String, // 추가된 날짜
+    onButtonClick: () -> Unit
+
 ) {
     Box(
         modifier = Modifier
@@ -66,7 +71,7 @@ fun ColorBox(
             ) {
                 icon() // 아이콘을 매개변수로 받아서 표시
                 Spacer(Modifier.width(4.dp))
-                Text(selectedAddress, style = AppTypography.labelMedium, modifier = Modifier.weight(1f))
+                Text(address, style = AppTypography.labelMedium, modifier = Modifier.weight(1f))
                 topLeft?.let { it() }
                 Spacer(Modifier.width(5.dp))
                 Text(topLeftText, style = AppTypography.labelMedium, color = textColor)
@@ -78,10 +83,10 @@ fun ColorBox(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("이름", style = AppTypography.bodyMedium)
+                    Text(name, style = AppTypography.bodyMedium)
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("2025.02.08", style = AppTypography.labelSmall, color = TextDarkGray, modifier = Modifier.weight(1f))
+                        Text(date, style = AppTypography.labelSmall, color = TextDarkGray, modifier = Modifier.weight(1f))
                         extraText?.let {
                             Text(it, style = AppTypography.labelSmall, color = TextDarkGray)
                         }
@@ -91,7 +96,7 @@ fun ColorBox(
                 if (showButton) { // 버튼이 표시될 때만 렌더링
                     Spacer(Modifier.width(8.dp))
                     Button(
-                        onClick = { /* TODO: 버튼 클릭 동작 */ },
+                        onClick = { onButtonClick() },
                         modifier = Modifier.height(35.dp).width(90.dp),
                         shape = RoundedCornerShape(5.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = White),
@@ -108,11 +113,15 @@ fun ColorBox(
 
 @Composable
 fun RedBox(
-    selectedAddress: String,
-    onBoxClick: () -> Unit
+    address: String,
+    onBoxClick: () -> Unit,
+    name: String,
+    date: String,
+    onButtonClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     ColorBox(
-        selectedAddress = selectedAddress,
+        address = address,
         icon = { RedMarkerIcon(Modifier.size(15.dp)) },
         borderColor = MarkerRed,
         buttonColor = MarkerRed,
@@ -121,37 +130,53 @@ fun RedBox(
         textColor = MarkerRed,
         topLeftText = "3Day",
         onBoxClick = onBoxClick,
-        showButton = true
+        showButton = true,
+        name = name, // 이름을 전달
+        date = date,
+        onButtonClick = onButtonClick
     )
 }
 
 @Composable
 fun YellowBox(
-    selectedAddress: String,
-    onBoxClick: () -> Unit
+    address: String,
+    onBoxClick: () -> Unit,
+    name: String,
+    date: String,
+    topLeftText: String,
+    onButtonClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     ColorBox(
-        selectedAddress = selectedAddress,
+        address = address,
         icon = { YellowMarkerIcon(Modifier.size(15.dp)) },
         borderColor = MarkerYellow,
         buttonColor = MarkerYellow,
         buttonText = "기록하기",
         topLeft = null, // timeLeft 옆의 아이콘을 null로 설정
         textColor = TextDarkGray,
-        topLeftText = "여행 이름",
+        topLeftText = topLeftText,
         onBoxClick = onBoxClick,
         showButton = true, // 버튼을 표시
-        extraText = ""
+        extraText = "",
+        name = name, // 이름을 전달
+        date = date,
+        onButtonClick = onButtonClick
     )
 }
 
 @Composable
 fun BlueBox(
-    selectedAddress: String,
-    onBoxClick: () -> Unit
+    address: String,
+    onBoxClick: () -> Unit,
+    name: String,
+    date: String,
+    onButtonClick: () -> Unit,
+    extraText: String? = null,
+    modifier: Modifier = Modifier
 ) {
     ColorBox(
-        selectedAddress = selectedAddress,
+        address = address,
         icon = { BlueMarkerIcon(Modifier.size(15.dp)) },
         borderColor = MarkerBlue,
         buttonColor = MarkerBlue,
@@ -161,6 +186,37 @@ fun BlueBox(
         topLeftText = "4.5",
         onBoxClick = onBoxClick,
         showButton = false, // 버튼을 숨김
-        extraText = "여행 이름"
+        extraText = extraText,
+        name = name, // 이름을 전달
+        date = date,
+        onButtonClick = onButtonClick
+    )
+}
+
+@Composable
+fun NavyBox(
+    address: String,
+    onBoxClick: () -> Unit,
+    name: String,
+    date: String,
+    topLeftText: String,
+    onButtonClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ColorBox(
+        address = address,
+        icon = { YellowMarkerIcon(Modifier.size(15.dp)) },
+        borderColor = MainNavy,
+        buttonColor = MainNavy,
+        buttonText = "기록하기",
+        topLeft = null, // timeLeft 옆의 아이콘을 null로 설정
+        textColor = TextDarkGray,
+        topLeftText = topLeftText,
+        onBoxClick = onBoxClick,
+        showButton = true, // 버튼을 표시
+        extraText = "",
+        name = name, // 이름을 전달
+        date = date, // 날짜를 전달
+        onButtonClick = onButtonClick
     )
 }

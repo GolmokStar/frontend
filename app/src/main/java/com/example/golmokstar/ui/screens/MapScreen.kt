@@ -51,13 +51,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy
+import com.example.golmokstar.ui.theme.MarkerBlue
+import com.example.golmokstar.ui.theme.MarkerRed
+import com.example.golmokstar.ui.theme.MarkerYellow
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
 import com.google.android.gms.location.LocationCallback
@@ -74,8 +76,6 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen() {
     val context = LocalContext.current
@@ -94,6 +94,9 @@ fun MapScreen() {
     var selectedAddress by remember { mutableStateOf("") }
     var showLocationBox by remember { mutableStateOf(false) } // 박스 열기/닫기 상태 추가
     var permissionGranted by remember { mutableStateOf(false) } // 권한이 허용되었는지 여부
+    var visibleBoxState by remember { mutableStateOf<String?>(null) }
+    var markerColor by remember { mutableStateOf(MarkerRed) } // 기본 색상 설정
+
 
     fun getAddressFromLatLng(latLng: LatLng) {
         val geocoder = Geocoder(context)
@@ -142,10 +145,6 @@ fun MapScreen() {
             permissionGranted = true
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
         } else { activity?.let { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) } }
-    }
-
-    // DataStore에서 저장된 위도, 경도 가져오기
-    LaunchedEffect(Unit) {
         dataStore.getLatitude.collect { savedLatitude = it }
         dataStore.getLongitude.collect { savedLongitude = it }
     }
@@ -174,9 +173,13 @@ fun MapScreen() {
                 properties = properties,
                 uiSettings = uiSettings,
                 onMapClick = { latLng ->
-                    selectedMarkerLocation = latLng // 클릭한 위치에 마커 설정
+                    // 지도 클릭 시: 마커 위치와 박스를 초기화합니다.
+                    selectedMarkerLocation = latLng
+                    markerColor = MarkerRed // 마커 색상도 빨간색으로 초기화
+                    visibleBoxState = "Red" // 박스를 빨간 박스로 초기화
+                    showLocationBox = true // 위치 박스 보여주기
                     getAddressFromLatLng(latLng)
-                    showLocationBox = false // 지도 클릭 시 정보 박스를 닫음
+
                 }
             ) {
                 // 저장된 위도, 경도가 있으면 마커 표시
@@ -184,7 +187,7 @@ fun MapScreen() {
                     Marker(
                         state = MarkerState(position = LatLng(savedLatitude, savedLongitude)),
                         title = "찜한 위치",
-                        icon = redMarkerPin(context)
+                        icon = redMarkerPin(context) // 초기 마커는 빨간색
                     )
                 }
 
@@ -193,7 +196,12 @@ fun MapScreen() {
                     Marker(
                         state = MarkerState(position = it),
                         title = "선택한 위치",
-                        icon = redMarkerPin(context)
+                        icon = when (markerColor) {
+                            MarkerRed -> redMarkerPin(context)
+                            MarkerYellow -> yellowMarkerPin(context)
+                            MarkerBlue -> blueMarkerPin(context)
+                            else -> redMarkerPin(context) // 기본 색상으로 처리
+                        }
                     )
                 }
             }
@@ -201,9 +209,12 @@ fun MapScreen() {
             // 내 위치 버튼 → 오른쪽 하단에 배치
             FloatingActionButton(onClick = {
                 cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
-            }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp), containerColor = White) {
+            }, modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp), containerColor = White) {
                 Icon(Icons.Default.MyLocation, contentDescription = "내 위치 이동", tint = MainNavy  )
             }
+
 
             // 선택된 위치 정보 박스
             AnimatedVisibility(
@@ -219,24 +230,51 @@ fun MapScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // RedBox 예시
-                    RedBox(
-                        selectedAddress = selectedAddress,
-                        onBoxClick = { selectedMarkerLocation = null } // 클릭 시 처리
-                    )
+                    if (visibleBoxState == null || visibleBoxState == "Red") {
+                        RedBox(
+                            address = selectedAddress,
+                            date = "2025-02-25",
+                            name = "성심당",
+                            onBoxClick = { selectedMarkerLocation = null },
+                            onButtonClick = {
+                                // RedBox 버튼 클릭 시 YellowBox로 전환
+                                visibleBoxState = "Yellow"
+                                markerColor = MarkerYellow
+                            }
+                        )
+                    }
 
                     // YellowBox 예시
-                    YellowBox(
-                        selectedAddress = selectedAddress,
-                        onBoxClick = { selectedMarkerLocation = null } // 클릭 시 처리
-                    )
+                    if (visibleBoxState == "Yellow") {
+                        YellowBox(
+                            address = selectedAddress,
+                            date = "2025-02-25",
+                            name = "성심당",
+                            onBoxClick = { selectedMarkerLocation = null },
+                            onButtonClick = {
+                                // YellowBox 버튼 클릭 시 BlueBox로 전환
+                                visibleBoxState = "Blue"
+                                markerColor = MarkerBlue
+                            },
+                            topLeftText = "입닫고맛잇는빵먹기"
+                        )
+                    }
 
                     // BlueBox 예시
-                    BlueBox(
-                        selectedAddress = selectedAddress,
-                        onBoxClick = { selectedMarkerLocation = null } // 클릭 시 처리
-                    )
+                    if (visibleBoxState == "Blue") {
+                        BlueBox(
+                            address = selectedAddress,
+                            date = "2025-02-25",
+                            name = "성심당",
+                            onButtonClick = { },
+                            onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
+                            extraText = "입닫고맛잇는빵먹기"
+                        )
+                    }
                 }
             }
+
+
 
             Box(
                 modifier = Modifier
@@ -245,94 +283,122 @@ fun MapScreen() {
                     .background(BlurBackgroundGray, shape = RoundedCornerShape(20.dp))
                     .align(Alignment.TopEnd) // 오른쪽 상단에 배치
             ) {
-
-                Column(
-                    modifier = Modifier.fillMaxSize(), // Column이 부모 Box에 맞게 채워지도록 설정
-                    verticalArrangement = Arrangement.Center, // 수직 정렬 중앙
-                    horizontalAlignment = Alignment.CenterHorizontally // 수평 정렬 중앙
-                ) {
-                    // "찜한 장소" 항목
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                    ) {
-                        RedMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "찜한 장소", color = White, style = AppTypography.bodyMedium)
-                    }
-                    // "방문 장소" 항목
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                    ) {
-                        YellowMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "방문 장소", color = White, style = AppTypography.bodyMedium)
-                    }
-                    // "기록 장소" 항목
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                    ) {
-                        BlueMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "기록 장소", color = White, style = AppTypography.bodyMedium)
-                    }
-                }
+                // Box 안의 목록
+                LocationItemList()
             }
 
-            // 상단 왼쪽에 드롭다운 배치
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }, // 드롭다운을 클릭했을 때 열리고 닫히게 함
-                modifier = Modifier.padding(16.dp).width(180.dp).height(50.dp).align(Alignment.TopStart)) {
-                OutlinedTextField(
-                    value = selectedItem,
-                    onValueChange = {}, // 값 변경 불가능하게 설정
-                    readOnly = true, // 읽기 전용으로 설정
-                    shape = RoundedCornerShape(12.dp),
-                    trailingIcon = {
-                        // 아이콘 클릭 시 드롭다운 열리거나 닫히게 함
-                        IconButton(onClick = { expanded = !expanded }) {
-                            Icon(
-                                imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                contentDescription = "드롭다운 열기",
-                                tint = IconGray
-                            )
-                        }
-                    },
-                    modifier = Modifier.menuAnchor(),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        containerColor = White,
-                        focusedBorderColor = IconGray,
-                        unfocusedBorderColor = IconGray,
-                        focusedTextColor = TextDarkGray,
-                        unfocusedTextColor = TextDarkGray
-                    ),
-                    textStyle = AppTypography.bodyMedium
-                )
 
-                // 드롭다운 메뉴
-                ExposedDropdownMenu(
+            // 상단 왼쪽에 드롭다운 배치
+            Box(modifier = Modifier.fillMaxSize()) {
+                // 드롭다운 컴포넌트 사용
+                DropdownMenuWithIcon(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }, // 드롭다운 외부 클릭 시 닫히게 함
-                    modifier = Modifier.background(White)
-                ) {
-                    items.forEach { item ->
-                        DropdownMenuItem(
-                            text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
-                            onClick = {
-                                selectedItem = item
-                                expanded = false // 아이템 클릭 시 드롭다운 닫히게 함
-                            }
+                    onExpandedChange = { expanded = it },
+                    selectedItem = selectedItem,
+                    onItemSelected = { selectedItem = it },
+                    items = items,
+                    modifier = Modifier.align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DropdownMenuWithIcon(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    selectedItem: String,
+    onItemSelected: (String) -> Unit,
+    items: List<String>,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
+            modifier = Modifier
+                .padding(16.dp)
+                .width(180.dp)
+                .height(50.dp)
+        ) {
+            OutlinedTextField(
+                value = selectedItem,
+                onValueChange = {}, // 값 변경 불가능하게 설정
+                readOnly = true, // 읽기 전용으로 설정
+                shape = RoundedCornerShape(12.dp),
+                trailingIcon = {
+                    // 아이콘 클릭 시 드롭다운 열리거나 닫히게 함
+                    IconButton(onClick = { onExpandedChange(!expanded) }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            contentDescription = "드롭다운 열기",
+                            tint = IconGray
                         )
                     }
+                },
+                modifier = Modifier.menuAnchor(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = White,
+                    focusedBorderColor = IconGray,
+                    unfocusedBorderColor = IconGray,
+                    focusedTextColor = TextDarkGray,
+                    unfocusedTextColor = TextDarkGray
+                ),
+                textStyle = AppTypography.bodyMedium
+            )
+
+            // 드롭다운 메뉴
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { onExpandedChange(false) }, // 드롭다운 외부 클릭 시 닫히게 함
+                modifier = Modifier.background(White)
+            ) {
+                items.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
+                        onClick = {
+                            onItemSelected(item) // 아이템 클릭 시 선택된 아이템 설정
+                            onExpandedChange(false) // 드롭다운 닫기
+                        }
+                    )
                 }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
+
+
+// 위치 목록 UI 컴포넌트
 @Composable
-fun PreviewMapScreen() { MapScreen() }
+fun LocationItemList() {
+    Column(
+        modifier = Modifier.fillMaxSize(), // Column이 부모 Box에 맞게 채워지도록 설정
+        verticalArrangement = Arrangement.Center, // 수직 정렬 중앙
+        horizontalAlignment = Alignment.CenterHorizontally // 수평 정렬 중앙
+    ) {
+        // "찜한 장소" 항목
+        LocationItem(text = "찜한 장소", icon = { RedMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        // "방문 장소" 항목
+        LocationItem(text = "방문 장소", icon = { YellowMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        // "기록 장소" 항목
+        LocationItem(text = "기록 장소", icon = { BlueMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+    }
+}
+
+// 항목 리스트 아이템
+@Composable
+fun LocationItem(text: String, icon: @Composable () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 4.dp)
+    ) {
+        icon()
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = text, color = White, style = AppTypography.bodyMedium)
+    }
+}
