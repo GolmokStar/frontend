@@ -49,7 +49,7 @@ import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.TextLightGray
 import com.example.golmokstar.ui.theme.White
 
-data class History(
+data class Sampledata(
     val name: String,
     val address: String,
     val imageUrl: String,
@@ -59,8 +59,8 @@ data class History(
     val date: String,
 )
 
-val sampleHistories = listOf(
-    History(
+val samplehistorydata = listOf(
+    Sampledata(
         name = "스컹크웍스",
         address = "경상북도 경주시",
         imageUrl = "",
@@ -68,7 +68,7 @@ val sampleHistories = listOf(
         title = "1박 2일 경쥬",
         content = "느낌이 좋았다. 인테리어가 이쁘고 음료도 맛있었다. 들어가고 바로 단체 손님 와서 식겁했다!! ",
         date = "2025.03.10"
-    ), History(
+    ), Sampledata(
         name = "석굴암",
         address = "경상북도 경주시",
         imageUrl = "",
@@ -76,7 +76,7 @@ val sampleHistories = listOf(
         title = "1박 2일 경쥬",
         content = "엄청 힘들게 올라갔는데 생각보다 떨어져서 석굴함을 봐서 너무 아쉬웠다. 위엄이 느껴지지 않았음",
         date = "2025.04.05"
-    ), History(
+    ), Sampledata(
         name = "첨성대",
         address = "경상북도 경주시",
         imageUrl = "",
@@ -84,7 +84,7 @@ val sampleHistories = listOf(
         title = "1박 2일 경쥬",
         content = "아제발 너무추웠다... 바람 너무 많이 불고 생각보다 작고 뭐 .. 뭐지 싶었음 너무 작았음 여기서 어케 별을 본걸까",
         date = "2025.02.25"
-    ), History(
+    ), Sampledata(
         name = "국립경주박물관",
         address = "경상북도 경주시",
         imageUrl = "",
@@ -92,7 +92,7 @@ val sampleHistories = listOf(
         title = "1박 2일 경쥬",
         content = "",
         date = "2025.02.25"
-    ), History(
+    ), Sampledata(
         name = "동리",
         address = "",
         imageUrl = "",
@@ -103,7 +103,6 @@ val sampleHistories = listOf(
     )
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun HistoryScreen() {
@@ -131,27 +130,27 @@ fun HistoryScreen() {
                 Spacer(modifier = Modifier.height(25.dp))
             }
 
-            items(sampleHistories) { history ->
-                if (history.content.isEmpty()) {
+            items(samplehistorydata) { sampledata ->
+                if (sampledata.content.isEmpty()) {
                     // NavyBox 컴포저블
                     NavyBox(
-                        address = history.address,
+                        address = sampledata.address,
                         onBoxClick = { },
-                        date = history.date,
-                        name = history.name,
-                        topLeftText = history.title,
+                        date = sampledata.date,
+                        name = sampledata.name,
+                        topLeftText = sampledata.title,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(20.dp))
-                } else { }
+                }
             }
 
-            items(sampleHistories) { history ->
+            items(samplehistorydata) { sampledata ->
                 // LazyColumn의 항목들을 추가
-                if (history.content.isNotEmpty()) {
-                    RecordataCard(history)
+                if (sampledata.content.isNotEmpty()) {
+                    RecordataCard(sampledata)
                 } else {
-                    RecorNodataCard(history)
+                    RecorNodataCard(sampledata)
                 }
             }
         }
@@ -218,7 +217,7 @@ fun DropdownMenuSection(
 
 
 @Composable
-fun RecorNodataCard(history: History) {
+fun RecorNodataCard(sampledata: Sampledata) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -237,7 +236,7 @@ fun RecorNodataCard(history: History) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = history.name, color = TextBlack, style = AppTypography.labelMedium)
+            Text(text = sampledata.name, color = TextBlack, style = AppTypography.labelMedium)
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -245,7 +244,7 @@ fun RecorNodataCard(history: History) {
             ) {
                 Icon(imageVector = ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "별 아이콘", tint = TextBlack)
 
-                Text(text = history.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
+                Text(text = sampledata.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
             }
         }
     }
@@ -253,7 +252,7 @@ fun RecorNodataCard(history: History) {
 }
 
 @Composable
-fun RecordataCard(history: History) {
+fun RecordataCard(sampledata: Sampledata) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -264,18 +263,17 @@ fun RecordataCard(history: History) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxSize().background(BlurBackgroundGray))
 
-            // Column을 수직으로 중앙 정렬하도록 설정
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.Center,  // 수직 중앙 정렬
+                verticalArrangement = Arrangement.Center
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
 
                 ) {
-                    Text(text = history.name, color = White, style = AppTypography.bodyLarge)
-                    Text(text = history.address, color = TextLightGray, style = AppTypography.labelMedium)
+                    Text(text = sampledata.name, color = White, style = AppTypography.bodyLarge)
+                    Text(text = sampledata.address, color = TextLightGray, style = AppTypography.labelMedium)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -284,11 +282,7 @@ fun RecordataCard(history: History) {
                     modifier = Modifier.width(200.dp).wrapContentHeight(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = history.content,
-                        color = White,
-                        style = AppTypography.labelSmall,
-                    )
+                    Text(text = sampledata.content, color = White, style = AppTypography.labelSmall)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -298,8 +292,8 @@ fun RecordataCard(history: History) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = history.title, color = TextLightGray, style = AppTypography.labelMedium)
-                    Text(text = history.date, color = TextLightGray, style = AppTypography.labelMedium)
+                    Text(text = sampledata.title, color = TextLightGray, style = AppTypography.labelMedium)
+                    Text(text = sampledata.date, color = TextLightGray, style = AppTypography.labelMedium)
                 }
             }
         }
@@ -312,7 +306,7 @@ fun RecordataCard(history: History) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = history.name, color = TextBlack, style = AppTypography.labelMedium)
+        Text(text = sampledata.name, color = TextBlack, style = AppTypography.labelMedium)
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -320,10 +314,9 @@ fun RecordataCard(history: History) {
         ) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "별 아이콘", tint = TextBlack)
 
-            Text(text = history.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
+            Text(text = sampledata.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
         }
     }
-
     Spacer(modifier = Modifier.height(20.dp))
 }
 

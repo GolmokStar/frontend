@@ -57,6 +57,8 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Icon
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // 테스트 관련 의존성
     testImplementation(libs.junit)
@@ -68,4 +70,8 @@ dependencies {
     // 디버그용 도구
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // 구글 맵
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+
 }
