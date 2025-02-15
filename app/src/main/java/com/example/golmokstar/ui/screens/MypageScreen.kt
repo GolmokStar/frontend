@@ -15,18 +15,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
@@ -41,6 +46,7 @@ import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.ErrorRed
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy
+import com.example.golmokstar.ui.theme.SuccessGreen
 import com.example.golmokstar.ui.theme.TextBlack
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.TextLightGray
@@ -89,7 +95,7 @@ fun MyPageTopBar(onBellClick: () -> Unit) {
         )
 
         Icon(
-            painter = painterResource(id = R.drawable.bell),
+            painter = painterResource(id = R.drawable.bell_icon),
             contentDescription = "알림",
             modifier = Modifier
                 .size(24.dp)
@@ -231,7 +237,7 @@ fun ProfileBox(travelCount: Int = 0) {
             .fillMaxWidth()
             .padding(top = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -271,7 +277,7 @@ fun ProfileBox(travelCount: Int = 0) {
                                         modifier = Modifier
                                             .border(1.dp, BlurBackgroundGray, RoundedCornerShape(5.dp))
                                             .padding(10.dp)
-                                    ){
+                                    ) {
                                         innerTextField()
                                     }
                                 }
@@ -298,7 +304,7 @@ fun ProfileBox(travelCount: Int = 0) {
                                                 onClick = {
                                                     if (selectedStyles.contains(style)) {
                                                         selectedStyles = selectedStyles.filterNot { it == style }
-                                                    } else if (selectedStyles.size < 2) {
+                                                    } else if (selectedStyles.size < 6) {  // 최대 6개 선택
                                                         selectedStyles = selectedStyles + style
                                                     }
                                                 },
@@ -307,13 +313,13 @@ fun ProfileBox(travelCount: Int = 0) {
                                                     .clip(RoundedCornerShape(30.dp))
                                                     .border(
                                                         width = 1.dp,
-                                                        color = if (selectedStyles.contains(style)) MainNavy else Color.Transparent, // 선택되지 않은 버튼에만 테두리
+                                                        color = if (selectedStyles.contains(style)) MainNavy else Color.Transparent,
                                                         shape = RoundedCornerShape(30.dp)
                                                     )
                                                     .padding(0.dp),
                                                 colors = ButtonDefaults.buttonColors(
-                                                    if (selectedStyles.contains(style)) Color.White else MainNavy, // 버튼
-                                                    contentColor = if (selectedStyles.contains(style)) MainNavy else Color.White // 내용
+                                                    if (selectedStyles.contains(style)) Color.White else MainNavy,
+                                                    contentColor = if (selectedStyles.contains(style)) MainNavy else Color.White
                                                 ),
                                                 contentPadding = PaddingValues(0.dp)
                                             ) {
@@ -350,23 +356,54 @@ fun ProfileBox(travelCount: Int = 0) {
                                 modifier = Modifier.padding(top = 10.dp)
                             )
 
+                            // 스타일 표시
                             Row(
                                 modifier = Modifier.padding(top = 12.dp)
                             ) {
-                                selectedStyles.forEach { style ->
-                                    Box(
-                                        modifier = Modifier
-                                            .size(70.dp, 25.dp)
-                                            .padding(end = 8.dp)
-                                            .clip(RoundedCornerShape(25.dp))
-                                            .background(MainNavy),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = style,
-                                            style = AppTypography.labelMedium,
-                                            color = White
-                                        )
+                                // 스타일이 4개 이상이면 두 줄로 나누어 표시
+                                if (selectedStyles.size > 3) {
+                                    Column {
+                                        selectedStyles.chunked(3).forEach { chunk ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Start
+                                            ) {
+                                                chunk.forEach { style ->
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(65.dp, 25.dp)
+                                                            .padding(end = 8.dp)
+                                                            .clip(RoundedCornerShape(25.dp))
+                                                            .background(MainNavy),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = style,
+                                                            style = AppTypography.labelMedium,
+                                                            color = White
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(5.dp))
+                                        }
+                                    }
+                                } else {
+                                    selectedStyles.forEach { style ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(65.dp, 25.dp)
+                                                .padding(end = 8.dp)
+                                                .clip(RoundedCornerShape(25.dp))
+                                                .background(MainNavy),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = style,
+                                                style = AppTypography.labelMedium,
+                                                color = White
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -384,7 +421,7 @@ fun ProfileBox(travelCount: Int = 0) {
                             ) {
                                 (0 until 3).forEach { colIndex ->
                                     val index = rowIndex * 3 + colIndex
-                                    if(index < unlockedProfiles.size){
+                                    if(index < unlockedProfiles.size) {
                                         Box(
                                             modifier = Modifier
                                                 .size(85.dp)
@@ -396,7 +433,7 @@ fun ProfileBox(travelCount: Int = 0) {
                                                     color = if (selectedProfileIndex == index) MainNavy else (Color.Transparent),
                                                     shape = CircleShape
                                                 )
-                                                .clickable(enabled = unlockedProfiles[index]){
+                                                .clickable(enabled = unlockedProfiles[index]) {
                                                     selectedProfileIndex = index
                                                 },
                                             contentAlignment = Alignment.Center
@@ -418,16 +455,16 @@ fun ProfileBox(travelCount: Int = 0) {
                 onClick = {
                     if (isEditingProfile) {
                         val nameLength = userName.length
-                        if(nameLength in 2..6){
-                            if (selectedStyles.size == 2) {
+                        if (nameLength in 2..6) {
+                            if (selectedStyles.isNotEmpty()) { // 여행 스타일이 1개 이상이면
                                 println("수정된 닉네임: ${userName}")
                                 println("선택된 여행 스타일: $selectedStyles")
                                 println("선택한 프로필 인덱스: $selectedProfileIndex")
                                 isEditingProfile = false
                             } else {
-                                Toast.makeText(context, "두 개의 스타일을 선택해야 합니다.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "여행 스타일을 1개 이상 선택해야 합니다.", Toast.LENGTH_SHORT).show()
                             }
-                        } else{
+                        } else {
                             Toast.makeText(context, "닉네임은 2~6글자로 설정 가능합니다.", Toast.LENGTH_SHORT).show()
                         }
                     } else {
@@ -438,15 +475,16 @@ fun ProfileBox(travelCount: Int = 0) {
                     .align(Alignment.TopEnd)
             ) {
                 Icon(
-                    painter = painterResource(id = if (isEditingProfile) R.drawable.profile_check else R.drawable.profile_edit),
+                    painter = painterResource(id = if (isEditingProfile) R.drawable.check_icon else R.drawable.edit_icon),
                     contentDescription = "수정 버튼",
                     modifier = Modifier.size(24.dp)
                 )
             }
         }
+
         // 🔴 닉네임 안내 메시지
         Spacer(modifier = Modifier.height(8.dp)) // 간격 조정
-        if (isEditingProfile) {
+        if (userName.length <= 1) {
             Text(
                 text = "* 닉네임을 입력해주세요. 2~6글자로 설정 가능합니다.",
                 style = AppTypography.labelSmall,
@@ -679,7 +717,7 @@ fun FriendsAddButton(onClick: () -> Unit) {
                 .background(Color.White)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.plus),
+                painter = painterResource(id = R.drawable.plus_icon),
                 contentDescription = "친구 추가",
                 tint = MainNavy,
                 modifier = Modifier.size(30.dp)
@@ -710,123 +748,133 @@ fun FriendsAddDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(White)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth()
-            ) {
-                // 제목
-                Text(
-                    text = "친구 추가",
-                    style = AppTypography.bodyLarge,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-
-                Divider(
-                    color = IconGray,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(5.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth()
+            Column {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth()
                 ) {
+                    // 제목
                     Text(
-                        text = "회원번호",
-                        style = AppTypography.bodyMedium,
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = "*",
-                        style = AppTypography.bodyMedium,
-                        color = ErrorRed
-                    )
-                }
-
-                // 회원 번호 입력칸
-                OutlinedTextField(
-                    value = membershipNumber,
-                    onValueChange = { membershipNumber = it },
-                    label = {
-                        Text(
-                            text = "회원번호를 입력해주세요. ex) #0000",
-                            style = AppTypography.labelMedium,
-                            color = TextDarkGray
-                        )
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
-                    shape = RoundedCornerShape(15.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = MainNavy, // 포커스 상태일 때 아웃라인 색상
-                        unfocusedBorderColor = MainNavy // 포커스가 아닐 때 아웃라인 색상
-                    )
-                )
-
-                // 오류 메시지
-                if (errorMessage.isNotEmpty()) {
-                    Text(
-                        text = errorMessage,
-                        color = Color.Red,
-                        style = AppTypography.labelSmall,
-                        modifier = Modifier.padding(top = 8.dp),
+                        text = "친구 추가",
+                        style = AppTypography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
-                }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Divider(
+                        color = IconGray,
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
 
-                // 버튼들
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // 취소 버튼
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(50.dp),
-                        border = BorderStroke(1.dp, MainNavy)
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "취소",
-                            color = MainNavy,
-                            fontSize = 14.sp,
-                            fontFamily = pretendardRegular
+                            text = "회원번호",
+                            style = AppTypography.bodyMedium,
+                            textAlign = TextAlign.Start
+                        )
+                        Text(
+                            text = "*",
+                            style = AppTypography.bodyMedium,
+                            color = ErrorRed
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    // 친구 신청 버튼
-                    Button(
-                        onClick = {
-                            // 회원 번호가 유효한지 확인
-                            if (membershipNumber.isBlank()) {
-                                errorMessage = "* 회원 번호를 입력해 주세요."
+                    // 회원 번호 입력칸
+                    OutlinedTextField(
+                        value = membershipNumber,
+                        onValueChange = { input ->
+                            if (input.startsWith("#").not()) {
+                                membershipNumber = "#"
                             } else {
-                                // 여기서 친구 신청 로직
-                                onFriendRequest(membershipNumber)
-                                onDismiss() // 다 끝나면 팝업 닫기
+                                val digitsOnly = input.removePrefix("#").filter { it.isDigit() }
+                                membershipNumber = "#${digitsOnly.take(4)}" // 최대 4자리 숫자로 제한
                             }
                         },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(50.dp),
-                        colors = ButtonDefaults.buttonColors(MainNavy)
-                    ) {
-                        Text(
-                            text = "친구 신청",
-                            color = White,
-                            fontSize = 14.sp,
-                            fontFamily = pretendardRegular
+                        label = {
+                            Text(
+                                text = "회원번호를 입력해주세요. ex) #0000",
+                                style = AppTypography.labelMedium,
+                                color = TextDarkGray
+                            )
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
+                        shape = RoundedCornerShape(15.dp),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MainNavy,
+                            unfocusedBorderColor = MainNavy
+                        ),
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number // 숫자 키패드만 활성화
                         )
+                    )
+
+
+                    // 오류 메시지
+                    if (errorMessage.isNotEmpty()) {
+                        Text(
+                            text = errorMessage,
+                            color = if (errorMessage.contains("완료")) SuccessGreen else ErrorRed,
+                            style = AppTypography.labelSmall,
+                            modifier = Modifier.padding(top = 8.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .drawBehind {
+                            drawLine(
+                                color = TextBlack, // 선 색상
+                                start = Offset(0f, 0f), // 시작 위치 (왼쪽 상단)
+                                end = Offset(size.width, 0f), // 끝 위치 (오른쪽 상단)
+                                strokeWidth = 1.dp.toPx() // 선 두께
+                            )
+                        },
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        shape = RectangleShape,
+                        onClick = {
+                            if (membershipNumber.length < 5) { // # 포함 최소 5자리 (#0000)
+                                errorMessage = "* 회원 번호를 입력해 주세요."
+                            } else {
+                                onFriendRequest(membershipNumber)
+                                errorMessage = "* 친구 신청이 완료되었습니다."
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = White)
+                    ) {
+                        Text("친구 신청", color = TextBlack, style = AppTypography.bodyMedium)
+                    }
+                    VerticalDivider(
+                        color = TextBlack,
+                        modifier = Modifier
+                            .width(1.dp) // 세로선 너비
+                            .fillMaxHeight() // 버튼 높이만큼 차지
+                    )
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        shape = RectangleShape,
+                        onClick = { onDismiss() },
+                        colors = ButtonDefaults.buttonColors(containerColor = White)
+                    ) {
+                        Text("취소", color = TextBlack, style = AppTypography.bodyMedium)
                     }
                 }
             }
@@ -846,7 +894,10 @@ fun MyPageScreenPreview() {
             .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
         MyPageScreen()
-
+//        FriendsAddDialog(
+//            onDismiss = {},
+//            onFriendRequest = {}
+//        )
     }
 }
 
