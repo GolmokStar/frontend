@@ -67,7 +67,7 @@ fun MainScreen(navController: NavHostController) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.HomeScreen.route) { HomeScreen() }
-            composable(BottomNavItem.CalendarScreen.route) { CalendarScreen() }
+            composable(BottomNavItem.CalendarScreen.route) { CalendarScreen(navController) }
             composable(BottomNavItem.MapScreen.route) { MapScreen() }
             composable(BottomNavItem.HistoryScreen.route) { HistoryScreen() }
             composable(BottomNavItem.MyPageScreen.route) { MyPageScreen() }
