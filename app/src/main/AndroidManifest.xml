@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -22,7 +21,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCPcGVa3kO7lSB-j2tzAOLXJto1ylxWkVs" />
+            android:value="AIzaSyBj2ns051wQWK9oaTKuKjhx16Mro2t13H8" />
 
         <activity
             android:name=".MainActivity"

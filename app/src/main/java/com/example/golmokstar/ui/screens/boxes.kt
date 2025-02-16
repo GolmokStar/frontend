@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -63,6 +62,8 @@ fun ColorBox(
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .padding(horizontal = 15.dp, vertical = 12.dp)
             .clickable { onBoxClick() } // 박스를 클릭했을 때 처리
+
+
     ) {
         Column(
             modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center
@@ -83,14 +84,17 @@ fun ColorBox(
             Row(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.SpaceBetween // ✅ 간격을 일정하게 맞춤
+                ) {
                     Text(name, style = AppTypography.bodyMedium)
-                    Spacer(Modifier.height(8.dp))
+
+                    Spacer(Modifier.height(4.dp)) // ✅ 모든 박스에서 동일한 높이 간격 유지
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(date, style = AppTypography.labelSmall, color = TextDarkGray, modifier = Modifier.weight(1f))
-                        extraText?.let {
-                            Text(it, style = AppTypography.labelSmall, color = TextDarkGray)
-                        }
+                        Text(extraText ?: "", style = AppTypography.labelSmall, color = TextDarkGray)
                     }
                 }
 
