@@ -1,14 +1,10 @@
 package com.example.golmokstar.ui.screens
 
-
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,8 +22,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -40,17 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import com.example.golmokstar.R
-import com.example.golmokstar.ui.theme.AppTypography
-import com.example.golmokstar.ui.theme.BackgroundSky
-import com.example.golmokstar.ui.theme.BlurBackgroundGray
-import com.example.golmokstar.ui.theme.ErrorRed
-import com.example.golmokstar.ui.theme.IconGray
-import com.example.golmokstar.ui.theme.MainNavy
-import com.example.golmokstar.ui.theme.SuccessGreen
-import com.example.golmokstar.ui.theme.TextBlack
-import com.example.golmokstar.ui.theme.TextDarkGray
-import com.example.golmokstar.ui.theme.TextLightGray
-import com.example.golmokstar.ui.theme.White
+import com.example.golmokstar.ui.theme.*
 
 @Composable
 fun MyPageScreen() {
@@ -84,7 +70,8 @@ fun MyPageTopBar(onBellClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp),
+            .height(54.dp)
+            .padding(top = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -139,7 +126,7 @@ fun FriendRequestPopupContent(friendRequests: List<String>) {
                 textAlign = TextAlign.Center
             )
 
-            Divider(
+            HorizontalDivider(
                 color = IconGray,
                 thickness = 1.dp,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -224,7 +211,7 @@ fun FriendRequestButtons(friendRequest: String) {
 fun ProfileBox(travelCount: Int = 0) {
     var isEditingProfile by remember { mutableStateOf(false) }
     var userName by remember { mutableStateOf("민지") }
-    var selectedStyles by remember { mutableStateOf(listOf("힐링", "음식")) }
+    var selectedStyles by remember { mutableStateOf(listOf("음식", "힐링")) }
     var selectedProfileIndex by remember { mutableStateOf(0) }
 
     val context = LocalContext.current
@@ -290,14 +277,14 @@ fun ProfileBox(travelCount: Int = 0) {
                             )
 
                             // 수정 : 여행 스타일 선택
-                            Column(modifier = Modifier.padding(top = 15.dp)) {
+                            Column(modifier = Modifier.padding(top = 12.dp)) {
                                 val travelStyles = listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑")
 
                                 travelStyles.chunked(3).forEachIndexed { index, chunk ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth()
-                                            .padding(bottom = if (index < travelStyles.chunked(3).size - 1) 8.dp else 0.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(15.dp)
+                                            .padding(bottom = if (index < travelStyles.chunked(3).size - 1) 5.dp else 0.dp),
+                                        horizontalArrangement = Arrangement.Start
                                     ) {
                                         chunk.forEach { style ->
                                             Button(
@@ -309,17 +296,18 @@ fun ProfileBox(travelCount: Int = 0) {
                                                     }
                                                 },
                                                 modifier = Modifier
-                                                    .size(50.dp, 20.dp)
-                                                    .clip(RoundedCornerShape(30.dp))
+                                                    .size(65.dp, 25.dp)
+                                                    .padding(end = 8.dp)
+                                                    .clip(RoundedCornerShape(25.dp))
                                                     .border(
                                                         width = 1.dp,
-                                                        color = if (selectedStyles.contains(style)) MainNavy else Color.Transparent,
-                                                        shape = RoundedCornerShape(30.dp)
+                                                        color = MainNavy, // 테두리 색
+                                                        shape = RoundedCornerShape(25.dp) // 둥근 테두리
                                                     )
                                                     .padding(0.dp),
                                                 colors = ButtonDefaults.buttonColors(
-                                                    if (selectedStyles.contains(style)) Color.White else MainNavy,
-                                                    contentColor = if (selectedStyles.contains(style)) MainNavy else Color.White
+                                                    if (selectedStyles.contains(style)) MainNavy else White,
+                                                    contentColor = if (selectedStyles.contains(style)) White else MainNavy
                                                 ),
                                                 contentPadding = PaddingValues(0.dp)
                                             ) {
@@ -417,16 +405,16 @@ fun ProfileBox(travelCount: Int = 0) {
                         (0 until 2).forEach { rowIndex ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 (0 until 3).forEach { colIndex ->
                                     val index = rowIndex * 3 + colIndex
                                     if(index < unlockedProfiles.size) {
                                         Box(
                                             modifier = Modifier
-                                                .size(85.dp)
+                                                .size(90.dp)
                                                 .clip(CircleShape)
-                                                .background(if (unlockedProfiles[index]) BlurBackgroundGray
+                                                .background(if (unlockedProfiles[index]) White
                                                 else Color.Gray.copy(alpha = 0.3f))
                                                 .border(
                                                     width = if (selectedProfileIndex == index) 1.dp else 0.dp,
@@ -439,13 +427,15 @@ fun ProfileBox(travelCount: Int = 0) {
                                             contentAlignment = Alignment.Center
                                         ) {
                                             if (!unlockedProfiles[index]) {
-                                                Text("🔒", fontSize = 20.sp, color = White)
+                                                Text("🔒", fontSize = 20.sp)
                                             }
                                         }
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(10.dp))
+                            if (rowIndex < (unlockedProfiles.size / 3) - 1) {
+                                Spacer(modifier = Modifier.height(15.dp))
+                            }
                         }
                     }
                 }
@@ -517,7 +507,7 @@ fun FriendsListTitle() {
             Text(
                 text = "친구 목록",
                 style = AppTypography.titleMedium,
-                modifier = Modifier.weight(1f) //텍스트가 가로로 남은 공간 차지
+                modifier = Modifier.weight(1f)
             )
 
             Row(
@@ -549,7 +539,7 @@ fun FriendsListTitle() {
 
 @Composable
 fun FriendsListScreen() {
-    val friends: List<MpFriend> = listOf(
+    val friends: MutableList<MpFriend> = mutableListOf(
         MpFriend("여섯글자이름", listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑"), 2),
         MpFriend("연주", listOf("음식", "문화예술"), 10),
         MpFriend("문희", listOf("문화예술"), 3),
@@ -558,20 +548,31 @@ fun FriendsListScreen() {
     )
 
     var showDialog by remember { mutableStateOf(false) }
+    var selectedFriend by remember { mutableStateOf<MpFriend?>(null) }
 
     LazyColumn(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         items(items = friends) { friend ->
-            FriendItem(friend.name, friend.styles, friend.travelCount)
+            FriendItem(
+                name = friend.name,
+                styles = friend.styles,
+                travelCount = friend.travelCount,
+                onClick = {
+                    selectedFriend = friend
+                    showDialog = true // 친구를 선택하면 친구 삭제 다이얼로그를 띄운다.
+                }
+            )
         }
 
-        // Add Friend Button at the end
         item {
-            FriendsAddButton(onClick = { showDialog = true })
+            FriendsAddButton(onClick = {
+                selectedFriend = null // 친구 추가 버튼을 누르면 selectedFriend를 null로 설정
+                showDialog = true // 친구 추가 다이얼로그를 띄운다
+            })
         }
     }
 
-    // Show dialog if showDialog is true
-    if (showDialog) {
+    // 친구 추가 다이얼로그 (selectedFriend가 null일 때만)
+    if (showDialog && selectedFriend == null) {
         FriendsAddDialog(
             onDismiss = { showDialog = false },
             onFriendRequest = { membershipNumber ->
@@ -580,7 +581,20 @@ fun FriendsListScreen() {
             }
         )
     }
+
+    // 친구 삭제 다이얼로그 (selectedFriend가 null이 아닐 때만)
+    if (showDialog && selectedFriend != null) {
+        FriendsDeleteDialog(
+            friendName = selectedFriend!!.name,
+            onDismiss = { showDialog = false },
+            onDelete = {
+                // 친구 삭제 로직
+                showDialog = false
+            }
+        )
+    }
 }
+
 
 data class MpFriend(
     val name: String,
@@ -589,11 +603,12 @@ data class MpFriend(
 )
 
 @Composable
-fun FriendItem(name: String, styles: List<String>, travelCount: Int) {
+fun FriendItem(name: String, styles: List<String>, travelCount: Int, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = 10.dp)
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -608,8 +623,8 @@ fun FriendItem(name: String, styles: List<String>, travelCount: Int) {
 
         Box(
             modifier = Modifier
-                .width(48.dp) // Fixed width for name
-                .wrapContentHeight(), // Adjust height to text size
+                .width(48.dp)
+                .wrapContentHeight(),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -645,8 +660,7 @@ fun FriendItem(name: String, styles: List<String>, travelCount: Int) {
                     ) {
                         Text(
                             text = style,
-                            fontSize = 12.sp,
-                            fontFamily = pretendardRegular,
+                            style = AppTypography.labelMedium,
                             color = White
                         )
                     }
@@ -698,6 +712,87 @@ fun FriendItem(name: String, styles: List<String>, travelCount: Int) {
     }
 }
 
+@Composable
+fun FriendsDeleteDialog(
+    friendName: String,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Box(
+            modifier = Modifier
+                .width(350.dp)
+                .height(150.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // text, buttons 배치를 위한 빈 컴포넌트
+                Box() {}
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "${friendName}님을 친구에서 삭제하시겠습니까?",
+                        style = AppTypography.bodyMedium,
+                        color = TextBlack
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .drawBehind { // Row 상단에만 Border 추가
+                            drawLine(
+                                color = TextBlack, // 선 색상
+                                start = Offset(0f, 0f), // 시작 위치 (왼쪽 상단)
+                                end = Offset(size.width, 0f), // 끝 위치 (오른쪽 상단)
+                                strokeWidth = 1.dp.toPx() // 선 두께
+                            )
+                        },
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        shape = RectangleShape,
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(containerColor = White)
+                    ) {
+                        Text(text = "취소", color = TextBlack, style = AppTypography.bodyMedium)
+                    }
+                    VerticalDivider(
+                        color = TextBlack,
+                        modifier = Modifier
+                            .width(1.dp) // 세로선 너비
+                            .fillMaxHeight() // 버튼 높이만큼 차지
+                    )
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        shape = RectangleShape,
+                        onClick = { onDelete() },
+                        colors = ButtonDefaults.buttonColors(containerColor = White)
+                    ) {
+                        Text("삭제하기", color = TextBlack, style = AppTypography.bodyMedium)
+                    }
+
+                }
+            }
+
+        }
+    }
+}
+
+
 // Friends Add Button Composable
 @Composable
 fun FriendsAddButton(onClick: () -> Unit) {
@@ -742,6 +837,7 @@ fun FriendsAddDialog(
 ) {
     var membershipNumber by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    val existingMembershipNumbers = listOf("#1234", "#5678", "#9999") // 존재하는 회원번호 목록 (예시)
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
@@ -802,7 +898,7 @@ fun FriendsAddDialog(
                         label = {
                             Text(
                                 text = "회원번호를 입력해주세요. ex) #0000",
-                                style = AppTypography.labelMedium,
+                                style = AppTypography.bodyMedium,
                                 color = TextDarkGray
                             )
                         },
@@ -851,6 +947,8 @@ fun FriendsAddDialog(
                         onClick = {
                             if (membershipNumber.length < 5) { // # 포함 최소 5자리 (#0000)
                                 errorMessage = "* 회원 번호를 입력해 주세요."
+                            } else if (membershipNumber !in existingMembershipNumbers) { // 존재하지 않는 회원번호
+                                errorMessage = "* 존재하지 않는 회원번호입니다."
                             } else {
                                 onFriendRequest(membershipNumber)
                                 errorMessage = "* 친구 신청이 완료되었습니다."
