@@ -53,14 +53,12 @@ dependencies {
     // Compose UI 라이브러리 (BOM을 통해 버전 관리됨)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
     implementation("androidx.compose.foundation:foundation")
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
     // Icon
-    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // 테스트 관련 의존성
     testImplementation(libs.junit)

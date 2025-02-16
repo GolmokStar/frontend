@@ -22,9 +22,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -74,6 +72,7 @@ data class Sampledata(
     val title: String,
     val content: String,
     val date: String,
+    val history: Boolean
 )
 
 val samplehistorydata = listOf(
@@ -84,7 +83,8 @@ val samplehistorydata = listOf(
         rating = 4.7,
         title = "1박 2일 경쥬",
         content = "느낌이 좋았다. 인테리어가 이쁘고 음료도 맛있었다. 들어가고 바로 단체 손님 와서 식겁했다!! ",
-        date = "2025.03.10"
+        date = "2025.02.25",
+        history = true
     ), Sampledata(
         name = "석굴암",
         address = "경상북도 경주시",
@@ -92,7 +92,8 @@ val samplehistorydata = listOf(
         rating = 4.2,
         title = "1박 2일 경쥬",
         content = "엄청 힘들게 올라갔는데 생각보다 떨어져서 석굴함을 봐서 너무 아쉬웠다. 위엄이 느껴지지 않았음",
-        date = "2025.04.05"
+        date = "2025.02.25",
+        history = true
     ), Sampledata(
         name = "첨성대",
         address = "경상북도 경주시",
@@ -100,7 +101,8 @@ val samplehistorydata = listOf(
         rating = 4.5,
         title = "1박 2일 경쥬",
         content = "아제발 너무추웠다... 바람 너무 많이 불고 생각보다 작고 뭐 .. 뭐지 싶었음 너무 작았음 여기서 어케 별을 본걸까",
-        date = "2025.02.25"
+        date = "2025.02.25",
+        history = true
     ), Sampledata(
         name = "국립경주박물관",
         address = "경상북도 경주시",
@@ -108,7 +110,8 @@ val samplehistorydata = listOf(
         rating = 4.3,
         title = "1박 2일 경쥬",
         content = "",
-        date = "2025.02.25"
+        date = "2025.02.25",
+        history = false
     ), Sampledata(
         name = "동리",
         address = "경상북도 경주시",
@@ -116,7 +119,8 @@ val samplehistorydata = listOf(
         rating = 4.8,
         title = "1박 2일 경쥬",
         content = "",
-        date = "2025.02.25"
+        date = "2025.02.25",
+        history = false
     )
 )
 
@@ -126,7 +130,6 @@ fun HistoryScreen() {
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("전체") }
 
-    // Report 다이얼로그 상태 추가
     var showDialog by remember { mutableStateOf(false) }
 
 
@@ -134,7 +137,7 @@ fun HistoryScreen() {
         modifier = Modifier
             .fillMaxSize()
             .background(color = White)
-            .padding(horizontal = 20.dp, vertical = 16.dp) // 좌우 20dp 패딩, 상단 16dp 패딩
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
             // 드롭다운 메뉴
@@ -150,10 +153,10 @@ fun HistoryScreen() {
 
         items(samplehistorydata) { sampledata ->
             if (sampledata.content.isEmpty()) {
-                // NavyBox 컴포저블
+
                 NavyBox(
                     address = sampledata.address,
-                    onBoxClick = { }, // 클릭 시 showDialog 상태를 true로 변경
+                    onBoxClick = { },
                     date = sampledata.date,
                     name = sampledata.name,
                     topLeftText = sampledata.title,
@@ -164,19 +167,17 @@ fun HistoryScreen() {
             }
         }
 
-        items(samplehistorydata) { sampledata ->
-            // LazyColumn의 항목들을 추가
-            if (sampledata.content.isNotEmpty()) {
-                RecordataCard(sampledata)
-            } else {
-                RecorNodataCard(sampledata)
-            }
+        items(samplehistorydata.toList()) { sampledata ->
+            OptionCard(sampledata)
+            Spacer(Modifier.height(5.dp))
+            CommonRow(sampledata)
+
         }
     }
 
-// Report 다이얼로그 표시
+    // Report 다이얼로그 표시
     if (showDialog) {
-        Report(showDialog = showDialog, onDismiss = { showDialog = false })
+        Report(onDismiss = { showDialog = false })
     }
 }
 
@@ -202,9 +203,16 @@ fun DropdownMenuSection(
             readOnly = true,
             shape = RoundedCornerShape(12.dp),
             trailingIcon = {
-                IconButton(onClick = { onExpandedChange(!expanded) }) {
+                IconButton(
+                    onClick = {
+                        onExpandedChange(!expanded)
+                    }
+                ) {
                     Icon(
-                        imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                        imageVector = if (expanded)
+                            ImageVector.vectorResource(id = R.drawable.arrow_drop_up_icon)
+                        else
+                            ImageVector.vectorResource(id = R.drawable.arrow_drop_down_icon),
                         contentDescription = "드롭다운 열기",
                         tint = IconGray
                     )
@@ -221,76 +229,60 @@ fun DropdownMenuSection(
             textStyle = AppTypography.bodyMedium,
         )
 
+        // ExposedDropdownMenu
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) },
+            onDismissRequest = {
+                // 외부 클릭 시 드롭다운을 닫기
+                onExpandedChange(false)
+            },
             modifier = Modifier.background(White)
         ) {
             items.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
-                    onClick = { onItemSelect(item)
-                        onExpandedChange(false) }
+                    onClick = {
+                        onItemSelect(item)
+                        onExpandedChange(false)
+                    }
                 )
             }
         }
     }
 }
 
-
 @Composable
-fun RecorNodataCard(sampledata: Sampledata) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+fun OptionCard(sampledata: Sampledata) {
+    var isClicked by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .clickable { isClicked = !isClicked },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Gray),
     ) {
-
-        Card(
-            modifier = Modifier.fillMaxWidth().height(160.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Gray),
-        ) {}
-
-        Spacer(modifier = Modifier.height(5.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = sampledata.name, color = TextBlack, style = AppTypography.labelMedium)
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Icon(imageVector = ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "별 아이콘", tint = TextBlack)
-
-                Text(text = sampledata.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
-            }
+        if (isClicked) {
+            ClickCard(sampledata)
         }
     }
-    Spacer(modifier = Modifier.height(20.dp))
 }
 
 @Composable
-fun RecordataCard(sampledata: Sampledata) {
-    Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Gray)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxSize().background(BlurBackgroundGray))
-
+fun ClickCard(sampledata: Sampledata) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally // 이 부분은 Column에 적용
+    ){
+        Card(
+            modifier = Modifier.fillMaxSize(), colors = CardDefaults.cardColors(BlurBackgroundGray)
+        ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.Center
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = sampledata.name, color = White, style = AppTypography.bodyLarge)
                     Text(text = sampledata.address, color = TextLightGray, style = AppTypography.labelMedium)
@@ -318,9 +310,11 @@ fun RecordataCard(sampledata: Sampledata) {
             }
         }
     }
+}
 
-    Spacer(modifier = Modifier.height(5.dp))
-
+// 공통 Row 부분을 분리한 함수
+@Composable
+fun CommonRow(sampledata: Sampledata) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -333,72 +327,71 @@ fun RecordataCard(sampledata: Sampledata) {
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "별 아이콘", tint = TextBlack)
-
             Text(text = sampledata.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
         }
     }
-    Spacer(modifier = Modifier.height(20.dp))
+
+    Spacer(Modifier.height(20.dp))
 }
+
 
 // 홈스크린 팝업 참고
 @Composable
-fun Report(showDialog: Boolean, onDismiss: () -> Unit) {
-    if (showDialog) {
-        Dialog(onDismissRequest = { onDismiss() }) {
-            Box(
-                modifier = Modifier
-                    .width(300.dp)
-                    .height(580.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 10.dp),
-                contentAlignment = Alignment.Center
+fun Report(onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Box(
+            modifier = Modifier
+                .width(300.dp)
+                .height(580.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.White)
+                .padding(horizontal = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                TitleArea(onDismiss)
+
+                PhotoAdd()
+
+                Spacer(Modifier.height(5.dp))
+
+                // 별점을 위한 상태 관리
+                var rating by remember { mutableFloatStateOf(0f) } // 현재 별점 상태
+
+                // 별점 표시
+                StarRatingBar(
+                    onRatingChange = { newRating -> rating = newRating }, // 별점 변경 시 업데이트
+                    fullStar = R.drawable.fullstar_icon, // 가득 찬 별 아이콘
+                    halfStar = R.drawable.halfstar_icon, // 반쪽 별 아이콘
+                    emptyStar = R.drawable.emptystar_icon // 빈 별 아이콘
+                )
+
+                Spacer(Modifier.height(5.dp))
+
+                RecordContent()
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    TitleArea(onDismiss)
-
-                    PhotoAdd()
-
-                    Spacer(Modifier.height(5.dp))
-
-                    // 별점을 위한 상태 관리
-                    var rating by remember { mutableFloatStateOf(0f) } // 현재 별점 상태
-
-                    // 별점 표시
-                    StarRatingBar(
-                        onRatingChange = { newRating -> rating = newRating }, // 별점 변경 시 업데이트
-                        fullStar = R.drawable.fullstar_icon, // 가득 찬 별 아이콘
-                        halfStar = R.drawable.halfstar_icon, // 반쪽 별 아이콘
-                        emptyStar = R.drawable.emptystar_icon // 빈 별 아이콘
-                    )
-
-                    Spacer(Modifier.height(5.dp))
-
-                    RecordContent()
-
-                    Row(
+                    Button(
+                        onClick = {},
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp),
-                        horizontalArrangement = Arrangement.End
+                            .width(88.dp)
+                            .height(35.dp),
+                        shape = RoundedCornerShape(5.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MainNavy,
+                        )
                     ) {
-                        Button(
-                            onClick = {},
-                            modifier = Modifier
-                                .width(88.dp)
-                                .height(35.dp),
-                            shape = RoundedCornerShape(5.dp),
-                            contentPadding = PaddingValues(0.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MainNavy,
-                            )
-                        ) {
-                            Text("완료", color = White, style = AppTypography.bodyMedium)
-                        }
+                        Text("완료", color = White, style = AppTypography.bodyMedium)
                     }
                 }
             }
@@ -444,7 +437,7 @@ fun PhotoAdd() {
                 Text(
                     text = "클릭해서 사진 추가하기",
                     color = TextDarkGray,
-                    style = AppTypography.bodyLarge
+                    style = AppTypography.bodyMedium
                 )
 
                 Spacer(Modifier.height(5.dp)) // 줄 간격 조정
@@ -534,8 +527,8 @@ fun RecordContent() {
         onValueChange = { newText -> content = newText },
         modifier = Modifier
             .fillMaxWidth()
-            .height(173.dp)
-            .border(1.dp, MainNavy, RoundedCornerShape(10.dp)), // 추가된 테두리만 사용
+            .height(173.dp),
+        shape = RoundedCornerShape(10.dp),
         textStyle = AppTypography.labelMedium,
         placeholder = {
             Text(
@@ -545,8 +538,8 @@ fun RecordContent() {
             )
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = MainNavy, // 기본 테두리 색을 투명하게 설정
-            unfocusedBorderColor = MainNavy, // 기본 테두리 색을 투명하게 설정
+            focusedBorderColor = MainNavy,
+            unfocusedBorderColor = MainNavy
         )
     )
 }

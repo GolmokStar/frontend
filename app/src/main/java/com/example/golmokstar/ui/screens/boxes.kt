@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.Timelapse
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -27,7 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.MarkerBlue
@@ -126,7 +127,7 @@ fun RedBox(
         borderColor = MarkerRed,
         buttonColor = MarkerRed,
         buttonText = "방문하기",
-        topLeft = { Icon(Icons.Default.Timelapse, contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerRed) },
+        topLeft = { Icon(ImageVector.vectorResource(id = R.drawable.time_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerRed) },
         textColor = MarkerRed,
         topLeftText = "3Day",
         onBoxClick = onBoxClick,
@@ -181,7 +182,7 @@ fun BlueBox(
         borderColor = MarkerBlue,
         buttonColor = MarkerBlue,
         buttonText = "",
-        topLeft = { Icon(Icons.Default.StarBorder, contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerBlue) },
+        topLeft = { Icon(ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerBlue) },
         textColor = MarkerBlue,
         topLeftText = "4.5",
         onBoxClick = onBoxClick,
