@@ -53,10 +53,12 @@ dependencies {
     // Compose UI 라이브러리 (BOM을 통해 버전 관리됨)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("androidx.compose.foundation:foundation")
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Icon
 
     // 테스트 관련 의존성
     testImplementation(libs.junit)
@@ -68,4 +70,8 @@ dependencies {
     // 디버그용 도구
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // 구글 맵
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+
 }
