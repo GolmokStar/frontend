@@ -36,7 +36,6 @@ fun AuthHomeScreen() {
                     painter = painterResource(id = R.drawable.app_icon),
                     contentDescription = "App Icon",
                     modifier = Modifier
-                        .size(100.dp)
                         .align(Alignment.Center)
                 )
             }

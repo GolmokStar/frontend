@@ -27,44 +27,40 @@ fun SignUpScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "사용자 정보 입력",
             style = AppTypography.titleLarge,
-            modifier = Modifier.padding(bottom = 32.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         // 닉네임 입력
-        LabelWithAsterisk("닉네임", Modifier.align(Alignment.Start).padding(bottom = 15.dp))
+        LabelWithAsterisk("닉네임", Modifier.align(Alignment.Start) )
         NickNameTextField(nickname, onChange = { nickname = it })
-        Spacer(modifier = Modifier.padding(6.dp))
         InfoBox("닉네임은 2~6글자로 설정 가능합니다")
-
-        Spacer(modifier = Modifier.padding(16.dp))
+        Spacer(modifier = Modifier.padding(4.dp))
 
         // 성별 선택
-        LabelWithAsterisk("성별", Modifier.align(Alignment.Start).padding(bottom = 15.dp))
+        LabelWithAsterisk("성별", Modifier.align(Alignment.Start))
         GenderSelection(
             selectedGender = selectedGender,
             onGenderSelected = { selectedGender = it }
         )
-
-        Spacer(modifier = Modifier.padding(16.dp))
+        Spacer(modifier = Modifier.padding(4.dp))
 
         // 생년월일 입력
-        LabelWithAsterisk("생년월일", Modifier.align(Alignment.Start).padding(bottom = 15.dp))
+        LabelWithAsterisk("생년월일", Modifier.align(Alignment.Start))
         BirthdateField(birthdate, onChange = { birthdate = it })
-
-        Spacer(modifier = Modifier.padding(16.dp))
+        Spacer(modifier = Modifier.padding(4.dp))
 
         // 여행 스타일 선택
         Text(
             text = "여행스타일",
             style = AppTypography.titleMedium,
             color = MainNavy,
-            modifier = Modifier.align(Alignment.Start).padding(bottom = 15.dp)
+            modifier = Modifier.align(Alignment.Start)
         )
         TravelStyleSelection(
             selectedStyles = selectedStyles,
@@ -76,8 +72,7 @@ fun SignUpScreen() {
                 }
             }
         )
-
-        Spacer(modifier = Modifier.padding(20.dp))
+        Spacer(modifier = Modifier.padding(4.dp))
 
         // 가입 완료 버튼
         Button(
