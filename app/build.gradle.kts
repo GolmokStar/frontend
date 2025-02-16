@@ -68,4 +68,13 @@ dependencies {
     // 디버그용 도구
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Google Maps Compose 라이브러리 추가
+    implementation("com.google.maps.android:maps-compose:2.11.4") // 최신 버전 사용
+    implementation("com.google.android.gms:play-services-maps:19.0.0") // Google Maps SDK
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.2")  // DataStore 라이브러리
+    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
+
+
 }

@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.Timelapse
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -27,7 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.MarkerBlue
@@ -126,7 +127,7 @@ fun RedBox(
         borderColor = MarkerRed,
         buttonColor = MarkerRed,
         buttonText = "방문하기",
-        topLeft = { Icon(Icons.Default.Timelapse, contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerRed) },
+        topLeft = { Icon(ImageVector.vectorResource(R.drawable.time_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerRed) },
         textColor = MarkerRed,
         topLeftText = "3Day",
         onBoxClick = onBoxClick,
@@ -181,7 +182,7 @@ fun BlueBox(
         borderColor = MarkerBlue,
         buttonColor = MarkerBlue,
         buttonText = "",
-        topLeft = { Icon(Icons.Default.StarBorder, contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerBlue) },
+        topLeft = { Icon(ImageVector.vectorResource(R.drawable.star_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerBlue) },
         textColor = MarkerBlue,
         topLeftText = "4.5",
         onBoxClick = onBoxClick,
@@ -197,26 +198,42 @@ fun BlueBox(
 fun NavyBox(
     address: String,
     onBoxClick: () -> Unit,
+    icon: @Composable () -> Unit,  // icon 컴포저블 함수로 타입 명시
     name: String,
     date: String,
     topLeftText: String,
     onButtonClick: () -> Unit,
+    extraText: String? = null,
+    topLeft: (@Composable (() -> Unit))? = null, // topLeft에 버튼이 있을 수도, 없을 수도 있음
     modifier: Modifier = Modifier
 ) {
     ColorBox(
         address = address,
-        icon = { YellowMarkerIcon(Modifier.size(15.dp)) },
+        icon = icon,
         borderColor = MainNavy,
         buttonColor = MainNavy,
-        buttonText = "기록하기",
-        topLeft = null, // timeLeft 옆의 아이콘을 null로 설정
+        buttonText = "방문하기",
+        topLeft = topLeft , // timeLeft 옆의 아이콘을 null로 설정
         textColor = TextDarkGray,
         topLeftText = topLeftText,
         onBoxClick = onBoxClick,
         showButton = true, // 버튼을 표시
-        extraText = "",
+        extraText = extraText,
         name = name, // 이름을 전달
         date = date, // 날짜를 전달
         onButtonClick = onButtonClick
     )
+}
+
+@Composable
+fun CustomButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(20.dp).width(60.dp),
+        shape = RoundedCornerShape(5.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MainNavy, contentColor = White),
+        contentPadding = PaddingValues(horizontal = 12.dp) // 버튼 안의 여백을 추가
+    ) {
+        Text(text = "찜하기", color = White, style = AppTypography.labelMedium, maxLines = 1)
+    }
 }

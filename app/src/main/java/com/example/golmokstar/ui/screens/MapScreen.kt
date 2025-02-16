@@ -28,10 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -50,9 +46,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
@@ -175,8 +175,8 @@ fun MapScreen() {
                 onMapClick = { latLng ->
                     // 지도 클릭 시: 마커 위치와 박스를 초기화합니다.
                     selectedMarkerLocation = latLng
-                    markerColor = MarkerRed // 마커 색상도 빨간색으로 초기화
-                    visibleBoxState = "Red" // 박스를 빨간 박스로 초기화
+                    markerColor = MainNavy // 마커 색상도 빨간색으로 초기화
+                    visibleBoxState = "Navy" // 박스를 빨간 박스로 초기화
                     showLocationBox = true // 위치 박스 보여주기
                     getAddressFromLatLng(latLng)
 
@@ -200,6 +200,7 @@ fun MapScreen() {
                             MarkerRed -> redMarkerPin(context)
                             MarkerYellow -> yellowMarkerPin(context)
                             MarkerBlue -> blueMarkerPin(context)
+                            MainNavy -> navyMarkerPin(context)
                             else -> redMarkerPin(context) // 기본 색상으로 처리
                         }
                     )
@@ -212,7 +213,7 @@ fun MapScreen() {
             }, modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp), containerColor = White) {
-                Icon(Icons.Default.MyLocation, contentDescription = "내 위치 이동", tint = MainNavy  )
+                Icon(painter = painterResource(R.drawable.my_location_icon),  contentDescription = "내 위치 이동", Modifier.size(20.dp), tint = MainNavy  )
             }
 
 
@@ -230,7 +231,7 @@ fun MapScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // RedBox 예시
-                    if (visibleBoxState == null || visibleBoxState == "Red") {
+                    if ( visibleBoxState == "Red") {
                         RedBox(
                             address = selectedAddress,
                             date = "2025-02-25",
@@ -269,6 +270,26 @@ fun MapScreen() {
                             onButtonClick = { },
                             onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
                             extraText = "입닫고맛잇는빵먹기"
+                        )
+                    }
+
+                    if(visibleBoxState == null || visibleBoxState == "Navy") {
+                        NavyBox(
+                            address = selectedAddress,
+                            date = "2025-02-25",
+                            name = "성심당",
+                            onButtonClick = {
+
+                                visibleBoxState = "Yellow"
+                                markerColor = MarkerYellow
+                                  },
+                            onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
+                            extraText = "",
+                            icon ={ NavyMarkerIcon(Modifier.size(15.dp)) },
+                            topLeftText = "",
+                            topLeft = { CustomButton {
+                                visibleBoxState = "Red"
+                                markerColor = MarkerRed }}
                         )
                     }
                 }
@@ -332,7 +353,9 @@ fun DropdownMenuWithIcon(
                     // 아이콘 클릭 시 드롭다운 열리거나 닫히게 함
                     IconButton(onClick = { onExpandedChange(!expanded) }) {
                         Icon(
-                            imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            imageVector =
+                                if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
+                                else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
                             contentDescription = "드롭다운 열기",
                             tint = IconGray
                         )
@@ -402,3 +425,5 @@ fun LocationItem(text: String, icon: @Composable () -> Unit) {
         Text(text = text, color = White, style = AppTypography.bodyMedium)
     }
 }
+
+

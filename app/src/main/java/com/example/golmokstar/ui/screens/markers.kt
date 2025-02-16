@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.golmokstar.R
+import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.MarkerBlue
 import com.example.golmokstar.ui.theme.MarkerRed
 import com.example.golmokstar.ui.theme.MarkerYellow
@@ -59,6 +60,10 @@ fun yellowMarkerPin(context: Context): BitmapDescriptor {
     return vectorToBitmap(context, R.drawable.marker_icon, MarkerYellow.toArgb()) // 노란색 (MarkerYellow)
 }
 
+fun navyMarkerPin(context: Context): BitmapDescriptor {
+    return vectorToBitmap(context, R.drawable.marker_icon, MainNavy.toArgb())
+}
+
 @Composable
 fun RedMarkerIcon(
     modifier: Modifier = Modifier,
@@ -95,6 +100,19 @@ fun BlueMarkerIcon(
         contentDescription = "위치",
         modifier = modifier.size(size), // 크기 설정
         tint = MarkerBlue // 파란색 색상 적용
+    )
+}
+
+@Composable
+fun NavyMarkerIcon(
+    modifier: Modifier = Modifier,
+    size: Dp = 15.dp
+) {
+    Icon(
+        imageVector = ImageVector.vectorResource(id = R.drawable.marker_icon), // 벡터 이미지 로드
+        contentDescription = "위치",
+        modifier = modifier.size(size), // 크기 설정
+        tint = MainNavy // 파란색 색상 적용
     )
 }
 
