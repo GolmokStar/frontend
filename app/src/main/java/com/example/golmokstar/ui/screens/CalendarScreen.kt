@@ -59,7 +59,6 @@ fun CalendarScreen(navController: NavController) {
         //show 변수에 따라 보여지는 팝업이 다름
         CustomCalendar(onClick = { showUnrecordedEntriesModal = true })
     }
-
     NotTravelingModal(
         navController,
         showDialog = showNotTravelingModal,
