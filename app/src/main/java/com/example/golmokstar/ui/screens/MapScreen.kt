@@ -97,6 +97,8 @@ fun MapScreen() {
     var visibleBoxState by remember { mutableStateOf<String?>(null) }
     var markerColor by remember { mutableStateOf(MarkerRed) } // 기본 색상 설정
 
+    var showDialog by remember { mutableStateOf(false) }
+
 
     fun getAddressFromLatLng(latLng: LatLng) {
         val geocoder = Geocoder(context)
@@ -256,6 +258,7 @@ fun MapScreen() {
                                 // YellowBox 버튼 클릭 시 BlueBox로 전환
                                 visibleBoxState = "Blue"
                                 markerColor = MarkerBlue
+                                showDialog = true
                             },
                             topLeftText = "입닫고맛잇는빵먹기"
                         )
@@ -295,7 +298,10 @@ fun MapScreen() {
                 }
             }
 
-
+            // Report 다이얼로그 표시
+            if (showDialog) {
+                Report(onDismiss = { showDialog = false })
+            }
 
             Box(
                 modifier = Modifier

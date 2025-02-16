@@ -161,7 +161,8 @@ fun HistoryScreen() {
                     name = sampledata.name,
                     topLeftText = sampledata.title,
                     modifier = Modifier.fillMaxWidth(),
-                    onButtonClick = { showDialog = true }
+                    onButtonClick = { showDialog = true },
+                    icon = { YellowMarkerIcon(Modifier.size(15.dp)) }
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }

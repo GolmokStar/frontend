@@ -58,7 +58,7 @@ fun ColorBox(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp)
+            .height(110.dp)
             .background(Color.White, RoundedCornerShape(12.dp))
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .padding(horizontal = 15.dp, vertical = 12.dp)
