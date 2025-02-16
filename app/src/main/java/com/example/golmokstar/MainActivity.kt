@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.ui.screens.*
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +67,7 @@ fun MainScreen(navController: NavHostController) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.HomeScreen.route) { HomeScreen() }
-            composable(BottomNavItem.CalendarScreen.route) { CalendarScreen() }
+            composable(BottomNavItem.CalendarScreen.route) { CalendarScreen(navController) }
             composable(BottomNavItem.MapScreen.route) { MapScreen() }
             composable(BottomNavItem.HistoryScreen.route) { HistoryScreen() }
             composable(BottomNavItem.MyPageScreen.route) { MyPageScreen() }

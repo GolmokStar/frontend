@@ -46,30 +46,26 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // Compose BOM을 사용하여 버전 자동 관리
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
+
+    // Compose UI 라이브러리 (BOM을 통해 버전 관리됨)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.play.services.location)
+
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+
+
+    // 테스트 관련 의존성
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    // 디버그용 도구
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    // Jetpack Compose Navigation 추가
-    implementation(libs.androidx.navigation.compose)
-    // Google Maps Compose 라이브러리 추가
-    implementation("com.google.maps.android:maps-compose:2.11.4") // 최신 버전 사용
-    implementation("com.google.android.gms:play-services-maps:19.0.0") // Google Maps SDK
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("androidx.datastore:datastore-preferences:1.1.2")  // DataStore 라이브러리
-    implementation("androidx.compose.material:material-icons-extended:1.7.7")
-    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
-
-
-
-
 }
