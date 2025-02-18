@@ -53,12 +53,10 @@ dependencies {
     // Compose UI 라이브러리 (BOM을 통해 버전 관리됨)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("androidx.compose.foundation:foundation")
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Icon
 
     // 테스트 관련 의존성
     testImplementation(libs.junit)
@@ -71,7 +69,12 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // 구글 맵
-    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    // Google Maps Compose 라이브러리 추가
+    implementation("com.google.maps.android:maps-compose:2.11.4") // 최신 버전 사용
+    implementation("com.google.android.gms:play-services-maps:19.0.0") // Google Maps SDK
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.2")  // DataStore 라이브러리
+    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
+
 
 }
