@@ -36,7 +36,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -74,6 +73,10 @@ data class Sampledata(
     val date: String,
     val history: Boolean
 )
+
+// 아래 리스트 지우고
+// val samplehistorydata = emptyList<Sampledata>()
+// 위의 리스트 추가하시면 기록 없을 때 UI 확인 가능해요
 
 val samplehistorydata = listOf(
     Sampledata(
@@ -124,6 +127,9 @@ val samplehistorydata = listOf(
     )
 )
 
+
+
+
 @Preview
 @Composable
 fun HistoryScreen() {
@@ -151,28 +157,34 @@ fun HistoryScreen() {
             Spacer(modifier = Modifier.height(25.dp))
         }
 
-        items(samplehistorydata) { sampledata ->
-            if (sampledata.content.isEmpty()) {
-
-                NavyBox(
-                    address = sampledata.address,
-                    onBoxClick = { },
-                    date = sampledata.date,
-                    name = sampledata.name,
-                    topLeftText = sampledata.title,
-                    modifier = Modifier.fillMaxWidth(),
-                    onButtonClick = { showDialog = true },
-                    icon = { YellowMarkerIcon(Modifier.size(15.dp)) }
-                )
-                Spacer(modifier = Modifier.height(20.dp))
+        // samplehistorydata가 비어 있는지 확인
+        if (samplehistorydata.isEmpty()) {
+            item {
+                noRecord() // 데이터가 없으면 noRecord 표시
             }
-        }
+        } else {
+            // 데이터가 있을 경우 LazyColumn의 항목들을 표시
+            items(samplehistorydata) { sampledata ->
+                if (sampledata.content.isEmpty()) {
+                    NavyBox(
+                        address = sampledata.address,
+                        onBoxClick = { },
+                        date = sampledata.date,
+                        name = sampledata.name,
+                        topLeftText = sampledata.title,
+                        modifier = Modifier.fillMaxWidth(),
+                        onButtonClick = { showDialog = true },
+                        icon = { YellowMarkerIcon(Modifier.size(15.dp)) }
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+            }
 
-        items(samplehistorydata.toList()) { sampledata ->
-            OptionCard(sampledata)
-            Spacer(Modifier.height(5.dp))
-            CommonRow(sampledata)
-
+            items(samplehistorydata.toList()) { sampledata ->
+                OptionCard(sampledata)
+                Spacer(Modifier.height(5.dp))
+                CommonRow(sampledata)
+            }
         }
     }
 
@@ -543,4 +555,17 @@ fun RecordContent() {
             unfocusedBorderColor = MainNavy
         )
     )
+}
+
+@Composable
+fun noRecord() {
+    Box(
+        modifier = Modifier.fillMaxWidth().height(92.dp)
+            .background(Color.White, shape = RoundedCornerShape(10.dp)) // 배경색 추가
+            .border(width = 1.dp, color = MainNavy, shape = RoundedCornerShape(10.dp)),
+
+        contentAlignment = Alignment.Center
+    ){
+        Text(text = "아직 방문한 기록이 없습니다.\n골목별과 여행을 시작해보세요!", style = AppTypography.bodyMedium, color = TextDarkGray )
+    }
 }
