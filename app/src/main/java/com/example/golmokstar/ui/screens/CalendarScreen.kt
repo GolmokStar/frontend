@@ -96,6 +96,8 @@ fun CalendarScreen(navController: NavController) {
 
     var showCreateDiaryModal by remember { mutableStateOf(false) }
 
+    var showDiary by remember { mutableStateOf(false) }
+
     var count = 3
 
     Column(
@@ -105,7 +107,7 @@ fun CalendarScreen(navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(25.dp)
     ) {
         //show 변수에 따라 보여지는 팝업이 다름
-        CustomCalendar(onClick = { showUnrecordedEntriesModal = true })
+        CustomCalendar(onClick = { showUnrecordedEntriesModal = true }, onClickDiaryDay = {showDiary = true})
         Section(
             firstComponent = {
                 Text(
@@ -134,11 +136,12 @@ fun CalendarScreen(navController: NavController) {
     CreateDiaryModal(
         showDialog = showCreateDiaryModal,
         onDismiss = { showCreateDiaryModal = false })
-
+    DiaryModal( showDialog = showDiary,
+        onDismiss = { showDiary = false }, sampleDiaries[0])
 }
 
 @Composable
-fun CustomCalendar(onClick: () -> Unit) {
+fun CustomCalendar(onClick: () -> Unit, onClickDiaryDay: () -> Unit) {
     val today = LocalDate.now()
 
     var visibleMonth by remember() { mutableStateOf(YearMonth.now()) }
@@ -161,7 +164,7 @@ fun CustomCalendar(onClick: () -> Unit) {
             selectedDate = clickedDate
             println("선택한 날짜: $clickedDate")
             onClick()
-        })
+        }, onClickDiaryDay)
 
 
     }
@@ -232,7 +235,8 @@ fun CalendarBody(
     visibleMonth: YearMonth,
     today: LocalDate,
     selectedDate: LocalDate?,
-    onDateClick: (LocalDate) -> Unit
+    onDateClick: (LocalDate) -> Unit,
+    onClickDiaryDay: () -> Unit
 ) {
     val firstDayOfMonth = visibleMonth.atDay(1) // 해당 월의 첫 번째 날
     val daysInMonth = visibleMonth.lengthOfMonth() // 해당 월의 총 날짜 개수
@@ -267,6 +271,9 @@ fun CalendarBody(
                                 .then(if (isToday) Modifier.background(BackgroundSky) else Modifier)
                                 .clickable {
                                     onDateClick(date) // 클릭 이벤트 호출
+                                    if(isToday) {
+                                        onClickDiaryDay()
+                                    }
                                 },
                             verticalArrangement = Arrangement.Top,
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -280,6 +287,7 @@ fun CalendarBody(
                             // 일기를 작성한 날을 구분해야하지만 현재 데이터가 없기 때문에 임시로 오늘을 기준으로 dot 찍음
                             if (isToday) {
                                 EventDot(MainNavy)
+
                             }
                         }
                     } else {
@@ -874,4 +882,55 @@ fun ModalContent() {
         Text("", style = AppTypography.labelSmall)
     }
 
+}
+
+
+@Composable
+fun DiaryModal(showDialog: Boolean, onDismiss: () -> Unit, diary: Diary) {
+    if (showDialog) {
+        Dialog(onDismissRequest = { onDismiss() }) {
+            Box(
+                modifier = Modifier
+                    .width(300.dp)
+                    .height(470.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(10.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(modifier = Modifier.width(18.dp)) {}
+                            Text(text = diary.date, color = TextBlack, style = AppTypography.bodyLarge)
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.close_icon),
+                                contentDescription = "Close",
+                                tint = IconGray,
+                                modifier = Modifier.clickable { onDismiss() }
+                            )
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = IconGray
+                        )
+                    }
+
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(TextLightGray, shape = RoundedCornerShape(20.dp))) {
+
+                    }
+                    Text(diary.title, color = TextBlack, style = AppTypography.bodyLarge)
+                    Text(diary.content, color = TextBlack, style = AppTypography.bodyMedium)
+                }
+            }
+        }
+    }
 }
