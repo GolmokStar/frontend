@@ -575,8 +575,6 @@ fun HistoryCard(history: History) {
         } else {
             OverCard(history)
         }
-
-
     }
 }
 
@@ -753,6 +751,4 @@ fun OverCard(history: History) {
         }
 
     }
-
-
 }
