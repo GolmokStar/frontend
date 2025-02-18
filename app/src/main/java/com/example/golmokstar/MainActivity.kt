@@ -1,5 +1,7 @@
 package com.example.golmokstar
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -170,5 +172,3 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: @Comp
     object HistoryScreen : BottomNavItem("history", "History", { ImageVector.vectorResource(id = R.drawable.history_icon) })
     object MyPageScreen : BottomNavItem("mypage", "MyPage", { ImageVector.vectorResource(id = R.drawable.mypage_icon) })
 }
-
-
