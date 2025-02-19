@@ -62,6 +62,7 @@ fun MyPageScreen() {
         ProfileBox()
         FriendsListTitle()
         FriendsListScreen()
+        LogOutAndDeleteButtons()
     }
 }
 
@@ -540,67 +541,126 @@ fun FriendsListTitle() {
 @Composable
 fun FriendsListScreen() {
     val friends: MutableList<MpFriend> = mutableListOf(
-        MpFriend("여섯글자이름", listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑"), 2),
-        MpFriend("연주", listOf("음식", "문화예술"), 10),
-        MpFriend("문희", listOf("문화예술"), 3),
-        MpFriend("승민", listOf("음식", "액티비티", "쇼핑"), 0),
-        MpFriend("어쩌구다", listOf("액티비티", "힐링", "자연", "쇼핑", "문화예술"), 331)
+//        MpFriend("여섯글자이름", listOf("음식", "액티비티", "문화예술", "힐링", "자연", "쇼핑"), 2),
+//        MpFriend("연주", listOf("음식", "문화예술"), 10),
+//        MpFriend("문희", listOf("문화예술"), 3),
+//        MpFriend("승민", listOf("음식", "액티비티", "쇼핑"), 0),
+//        MpFriend("어쩌구다", listOf("액티비티", "힐링", "자연", "쇼핑", "문화예술"), 331)
     )
 
     var showDialog by remember { mutableStateOf(false) }
     var selectedFriend by remember { mutableStateOf<MpFriend?>(null) }
 
-    LazyColumn(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-        items(items = friends) { friend ->
-            FriendItem(
-                name = friend.name,
-                styles = friend.styles,
-                travelCount = friend.travelCount,
-                onClick = {
-                    selectedFriend = friend
-                    showDialog = true // 친구를 선택하면 친구 삭제 다이얼로그를 띄운다.
-                }
-            )
-        }
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        if (friends.isEmpty()) {
+            // 친구가 없을 때 표시할 박스
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(92.dp)
+                    .background(Color.White, shape = RoundedCornerShape(10.dp))
+                    .border(width = 1.dp, color = MainNavy, shape = RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "아직 친구가 없습니다.\n친구 추가를 통해 친구를 만들어보세요!",
+                    color = TextDarkGray,
+                    textAlign = TextAlign.Center,
+                    style = AppTypography.bodyMedium
+                )
+            }
 
-        item {
+            Spacer(modifier = Modifier.height(16.dp))
+
             FriendsAddButton(onClick = {
-                selectedFriend = null // 친구 추가 버튼을 누르면 selectedFriend를 null로 설정
-                showDialog = true // 친구 추가 다이얼로그를 띄운다
+                selectedFriend = null
+                showDialog = true
             })
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(items = friends) { friend ->
+                    FriendItem(
+                        name = friend.name,
+                        styles = friend.styles,
+                        travelCount = friend.travelCount,
+                        onClick = {
+                            selectedFriend = friend
+                            showDialog = true
+                        }
+                    )
+                }
+
+                item {
+                    FriendsAddButton(onClick = {
+                        selectedFriend = null
+                        showDialog = true
+                    })
+                }
+            }
         }
     }
 
-    // 친구 추가 다이얼로그 (selectedFriend가 null일 때만)
+    // 친구 추가 및 삭제 다이얼로그 로직 유지
     if (showDialog && selectedFriend == null) {
         FriendsAddDialog(
             onDismiss = { showDialog = false },
             onFriendRequest = { membershipNumber ->
-                // 친구 신청 로직 처리
                 println("회원번호 ${membershipNumber}으로 친구 신청")
             }
         )
     }
 
-    // 친구 삭제 다이얼로그 (selectedFriend가 null이 아닐 때만)
     if (showDialog && selectedFriend != null) {
         FriendsDeleteDialog(
             friendName = selectedFriend!!.name,
             onDismiss = { showDialog = false },
             onDelete = {
-                // 친구 삭제 로직
                 showDialog = false
             }
         )
     }
 }
 
+@Composable
+fun LogOutAndDeleteButtons() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween // 양 끝에 배치
+        ) {
+            Text(
+                text = "로그아웃",
+                style = AppTypography.labelMedium,
+                color = TextDarkGray,
+                modifier = Modifier.clickable {
+                    // 로그아웃 로직
+                    println("로그아웃")
+                }
+            )
+
+            Text(
+                text = "회원탈퇴",
+                style = AppTypography.labelMedium,
+                color = TextDarkGray,
+                modifier = Modifier.clickable {
+                    // 회원탈퇴 로직
+                    println("회원탈퇴")
+                }
+            )
+        }
+    }
+}
 
 data class MpFriend(
     val name: String,
     val styles: List<String>,
     val travelCount: Int
 )
+
 
 @Composable
 fun FriendItem(name: String, styles: List<String>, travelCount: Int, onClick: () -> Unit) {
