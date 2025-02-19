@@ -74,10 +74,6 @@ data class Sampledata(
     val history: Boolean
 )
 
-// 아래 리스트 지우고
-// val samplehistorydata = emptyList<Sampledata>()
-// 위의 리스트 추가하시면 기록 없을 때 UI 확인 가능해요
-
 val samplehistorydata = listOf(
     Sampledata(
         name = "스컹크웍스",
@@ -126,9 +122,6 @@ val samplehistorydata = listOf(
         history = false
     )
 )
-
-
-
 
 @Preview
 @Composable
@@ -563,9 +556,14 @@ fun noRecord() {
         modifier = Modifier.fillMaxWidth().height(92.dp)
             .background(Color.White, shape = RoundedCornerShape(10.dp)) // 배경색 추가
             .border(width = 1.dp, color = MainNavy, shape = RoundedCornerShape(10.dp)),
-
         contentAlignment = Alignment.Center
+
     ){
-        Text(text = "아직 방문한 기록이 없습니다.\n골목별과 여행을 시작해보세요!", style = AppTypography.bodyMedium, color = TextDarkGray )
+        Text(
+            text = "아직 방문한 기록이 없습니다.\n골목별과 여행을 시작해보세요!",
+            style = AppTypography.bodyMedium,
+            color = TextDarkGray,
+            textAlign = TextAlign.Center,
+        )
     }
 }
