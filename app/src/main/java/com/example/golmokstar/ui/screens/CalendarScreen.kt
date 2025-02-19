@@ -84,7 +84,8 @@ val sampleDiaries = listOf(
 @Preview(showBackground = true)
 @Composable
 fun MyScreenPreview() {
-    CalendarScreen(navController = rememberNavController())
+    DiaryModal( showDialog = true,
+        onDismiss = {  }, sampleDiaries[0])
 }
 
 
@@ -902,7 +903,7 @@ fun DiaryModal(showDialog: Boolean, onDismiss: () -> Unit, diary: Diary) {
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth(),
