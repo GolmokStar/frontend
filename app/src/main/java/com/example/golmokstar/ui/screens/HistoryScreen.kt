@@ -153,7 +153,7 @@ fun HistoryScreen() {
         // samplehistorydata가 비어 있는지 확인
         if (samplehistorydata.isEmpty()) {
             item {
-                noRecord() // 데이터가 없으면 noRecord 표시
+                NoRecord() // 데이터가 없으면 NoRecord 표시
             }
         } else {
             // 데이터가 있을 경우 LazyColumn의 항목들을 표시
@@ -551,7 +551,7 @@ fun RecordContent() {
 }
 
 @Composable
-fun noRecord() {
+fun NoRecord() {
     Box(
         modifier = Modifier.fillMaxWidth().height(92.dp)
             .background(Color.White, shape = RoundedCornerShape(10.dp)) // 배경색 추가
