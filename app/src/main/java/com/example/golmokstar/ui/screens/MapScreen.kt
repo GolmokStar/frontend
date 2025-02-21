@@ -143,25 +143,31 @@ fun MapScreen() {
         }
     }
 
-    // 장소 ID로 장소 이름과 정보 가져오기
     fun getPlaceNameFromId(placeId: String) {
-        val placeFields = listOf(Place.Field.NAME, Place.Field.TYPES)  // 장소 이름과 장소 유형 받아오기
+        val placeFields = listOf(Place.Field.NAME, Place.Field.TYPES, Place.Field.ADDRESS, Place.Field.LAT_LNG)
         val request = FetchPlaceRequest.builder(placeId, placeFields).build()
 
         placesClient?.fetchPlace(request)
             ?.addOnSuccessListener { response ->
                 val place = response.place
+                Log.d("PlaceDetails", "응답 데이터: " + place.toString())
+
                 val placeName = place.name ?: "이름 없음"
                 val placeTypes = place.types?.joinToString(", ") ?: "유형 없음"
-                Log.d("PlaceDetails", "장소 이름: $placeName, 유형: $placeTypes")  // 장소 이름과 유형을 콘솔에 출력
+                val placeAddress = place.address ?: "주소 없음"
+                val placeLatLng = place.latLng ?: LatLng(0.0, 0.0)
+
+                Log.d("PlaceDetails", "장소 이름: $placeName, 유형: $placeTypes, 주소: $placeAddress")  // 추가된 필드 정보 출력
+
                 selectedName = placeName
+                selectedAddress = placeAddress
+                currentLocation = placeLatLng // 위치 정보 업데이트
             }
             ?.addOnFailureListener { exception ->
                 Log.e("PlaceDetails", "장소 정보 가져오기 실패: ${exception.message}")
                 selectedName = "장소 정보를 가져올 수 없습니다."
             }
     }
-
 
     // 주소로 장소 검색
     fun getPlaceFromAddress(address: String) {
@@ -191,7 +197,7 @@ fun MapScreen() {
                 }
         } ?: run {
             Log.e("PlacesClient", "PlacesClient 초기화 실패")
-            selectedName = "PlacesClient가 초기화되지 않았습니다."
+            selectedName = "PlacesClient가 초기되지 않았습니다."
         }
     }
 
