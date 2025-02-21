@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -58,11 +57,13 @@ fun ColorBox(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp)
+            .height(110.dp)
             .background(Color.White, RoundedCornerShape(12.dp))
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .padding(horizontal = 15.dp, vertical = 12.dp)
             .clickable { onBoxClick() } // 박스를 클릭했을 때 처리
+
+
     ) {
         Column(
             modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center
@@ -83,14 +84,17 @@ fun ColorBox(
             Row(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.SpaceBetween // ✅ 간격을 일정하게 맞춤
+                ) {
                     Text(name, style = AppTypography.bodyMedium)
-                    Spacer(Modifier.height(8.dp))
+
+                    Spacer(Modifier.height(4.dp)) // ✅ 모든 박스에서 동일한 높이 간격 유지
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(date, style = AppTypography.labelSmall, color = TextDarkGray, modifier = Modifier.weight(1f))
-                        extraText?.let {
-                            Text(it, style = AppTypography.labelSmall, color = TextDarkGray)
-                        }
+                        Text(extraText ?: "", style = AppTypography.labelSmall, color = TextDarkGray)
                     }
                 }
 
@@ -127,7 +131,7 @@ fun RedBox(
         borderColor = MarkerRed,
         buttonColor = MarkerRed,
         buttonText = "방문하기",
-        topLeft = { Icon(ImageVector.vectorResource(id = R.drawable.time_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerRed) },
+        topLeft = { Icon(ImageVector.vectorResource(R.drawable.time_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerRed) },
         textColor = MarkerRed,
         topLeftText = "3Day",
         onBoxClick = onBoxClick,
@@ -182,7 +186,7 @@ fun BlueBox(
         borderColor = MarkerBlue,
         buttonColor = MarkerBlue,
         buttonText = "",
-        topLeft = { Icon(ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerBlue) },
+        topLeft = { Icon(ImageVector.vectorResource(R.drawable.star_icon), contentDescription = "아이콘", modifier = Modifier.size(17.dp), tint = MarkerBlue) },
         textColor = MarkerBlue,
         topLeftText = "4.5",
         onBoxClick = onBoxClick,
@@ -198,26 +202,42 @@ fun BlueBox(
 fun NavyBox(
     address: String,
     onBoxClick: () -> Unit,
+    icon: @Composable () -> Unit,  // icon 컴포저블 함수로 타입 명시
     name: String,
     date: String,
     topLeftText: String,
     onButtonClick: () -> Unit,
+    extraText: String? = null,
+    topLeft: (@Composable (() -> Unit))? = null, // topLeft에 버튼이 있을 수도, 없을 수도 있음
     modifier: Modifier = Modifier
 ) {
     ColorBox(
         address = address,
-        icon = { YellowMarkerIcon(Modifier.size(15.dp)) },
+        icon = icon,
         borderColor = MainNavy,
         buttonColor = MainNavy,
-        buttonText = "기록하기",
-        topLeft = null, // timeLeft 옆의 아이콘을 null로 설정
+        buttonText = "방문하기",
+        topLeft = topLeft , // timeLeft 옆의 아이콘을 null로 설정
         textColor = TextDarkGray,
         topLeftText = topLeftText,
         onBoxClick = onBoxClick,
         showButton = true, // 버튼을 표시
-        extraText = "",
+        extraText = extraText,
         name = name, // 이름을 전달
         date = date, // 날짜를 전달
         onButtonClick = onButtonClick
     )
+}
+
+@Composable
+fun CustomButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(20.dp).width(60.dp),
+        shape = RoundedCornerShape(5.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MainNavy, contentColor = White),
+        contentPadding = PaddingValues(horizontal = 12.dp) // 버튼 안의 여백을 추가
+    ) {
+        Text(text = "찜하기", color = White, style = AppTypography.labelMedium, maxLines = 1)
+    }
 }

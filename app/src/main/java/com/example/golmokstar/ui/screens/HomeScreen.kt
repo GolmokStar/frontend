@@ -40,10 +40,6 @@ import androidx.compose.ui.zIndex
 import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.*
 
-data class Event(
-    var title: String, var startDate: String, var endDate: String
-)
-
 
 data class Place(
     val name: String, val address: String, val imageUrl: String
@@ -143,6 +139,26 @@ val sampleHistories = listOf(
 )
 
 
+enum class TravelState {
+    NONE, // 아무것도 아님
+    SETTING, // 설정 중
+    TRAVELING // 여행 중
+}
+
+data class TravelPlan(
+    val title: String, // 여행 제목 (필수)
+    val startDate: String, // 시작 날짜 (필수, 예: "2025/06/01")
+    val endDate: String, // 종료 날짜 (필수, 예: "2025/06/07")
+    val friends: List<String> = emptyList() // 선택 요소: 친구 리스트 (기본값: 빈 리스트)
+)
+
+enum class Error {
+    NONE, // 에러 없음
+    Title, // 제목 없음
+    Date, // 날짜 없음
+    Both, // 둘 다 없음
+}
+
 @Preview
 @Composable
 fun HomeScreen() {
@@ -150,11 +166,19 @@ fun HomeScreen() {
     // FocusManager 객체 생성
     val focusManager = LocalFocusManager.current
 
-    var openTripSetBox by remember { mutableStateOf(false) }
-
     val scrollState = rememberScrollState()
 
     val count = 1
+
+    var travelPlan by remember {
+        mutableStateOf(
+            TravelPlan(title = "", startDate = "", endDate = "")
+        )
+    }
+
+    var currentState by remember { mutableStateOf(TravelState.NONE) }
+
+    var currentError by remember { mutableStateOf(Error.NONE) }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(35.dp),
@@ -167,7 +191,10 @@ fun HomeScreen() {
                 detectTapGestures(onTap = {
                     // 화면의 빈 곳을 클릭하면 포커스를 해제
                     focusManager.clearFocus()
-                    openTripSetBox = false
+                    if (travelPlan.title.isEmpty()) {
+                        currentState = TravelState.NONE
+                        travelPlan = TravelPlan(title = "", startDate = "", endDate = "")
+                    }
                 })
             },
     ) {
@@ -176,10 +203,30 @@ fun HomeScreen() {
                 text = "여행 등록하기", style = AppTypography.titleMedium
             )
         }, secondComponent = {
-            CheckIconTextField(focusManager,
-                openTripSetBox,
-                onFocusChange = { openTripSetBox = it },
-                onOpenTripSetBoxChange = { openTripSetBox = true })
+            CreateTravelSection(travelPlan,
+                onChangeTitle = { travelPlan = travelPlan.copy(title = it) },
+                onChangeStartDate = { travelPlan = travelPlan.copy(startDate = it) },
+                onChangeEndDate = { travelPlan = travelPlan.copy(endDate = it) },
+                currentState,
+                changeTravelState = { state ->
+                    when (state) {
+                        TravelState.SETTING -> currentState = state
+                        TravelState.TRAVELING ->
+                            if (travelPlan.title.isNotEmpty() && travelPlan.startDate.isNotEmpty() && travelPlan.endDate.isNotEmpty()) {
+                                currentError = Error.NONE
+                                currentState = state
+                            } else if (travelPlan.title.isEmpty() && (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty())) {
+                                currentError = Error.Both
+                            } else if (travelPlan.title.isEmpty()) {
+                                currentError = Error.Title
+                            } else if (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty()) {
+                                currentError = Error.Date
+                            }
+
+                        else -> {}
+                    }
+                }, currentError
+            )
         }, padding = 20
         )
 
@@ -224,225 +271,111 @@ fun Section(
     }
 }
 
+
 @Composable
-fun CheckIconTextField(
-    focusManager: FocusManager,
-    openTripSetBox: Boolean,
-    onFocusChange: (Boolean) -> Unit,
-    onOpenTripSetBoxChange: (Boolean) -> Unit
+fun CreateTravelSection(
+    travelPlan: TravelPlan,
+    onChangeTitle: (String) -> Unit,
+    onChangeStartDate: (String) -> Unit,
+    onChangeEndDate: (String) -> Unit,
+    currentState: TravelState,
+    changeTravelState: (TravelState) -> Unit,
+    currentError: Error
 ) {
-
-    // FocusRequester 객체 생성
-    val focusRequester = remember { FocusRequester() }
-
-    var showCaption by remember { mutableStateOf(true) }
-
-    var event by remember {
-        mutableStateOf(
-            Event(
-                title = "", startDate = "", endDate = ""
-            )
-        )
-    }
-
-    Column {
-        OutlinedTextField(value = event.title,
-            onValueChange = { newTitle ->
-                event = event.copy(title = newTitle)
-                if(event.title.isNotEmpty()) {
-                    showCaption = false
-                }
-                else {
-                    showCaption = true
-                }
-            },
-            placeholder = {
-                Text(
-                    "이번 여행의 제목은 무엇인가요?", color = TextDarkGray, style = AppTypography.bodyMedium
-                )
-            },
-            trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.padding(end = 10.dp)
-                ) {
-                    VerticalDivider(
-                        color = IconGray, modifier = Modifier
-                            .height(32.dp) // 선 높이
-                            .width(1.dp) // 선 너비
-                    )
-                    Icon(imageVector = Icons.Default.Check,
-                        contentDescription = "Check Icon",
-                        tint = TextDarkGray,
-                        modifier = Modifier.clickable {
-                            if(event.title.isNotEmpty()) {
-                                onFocusChange(false) // 아이콘 클릭 시 포커스 해제
-                                focusManager.clearFocus()
-                            }
-                        }
-
-                    )
-                }
-            },
-            textStyle = TextStyle(color = TextBlack),
-            shape = RoundedCornerShape(10.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = White,
-                unfocusedContainerColor = White,
-                focusedIndicatorColor = MainNavy,
-                unfocusedIndicatorColor = MainNavy,
-            ),
+    TravelTitleField(travelPlan.title, onChangeTitle, currentState, changeTravelState)
+    if (currentState == TravelState.SETTING) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .zIndex(1f)
-                .focusRequester(focusRequester) // FocusRequester 연결
-                .onFocusChanged { focusState ->
-                    if (focusState.isFocused) {
-                        onFocusChange(true)
+                .offset(y = (-20).dp)
+                .zIndex(0f), verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        BackgroundSky,
+                        shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)
+                    )
+                    .padding(vertical = 20.dp)
+            ) {
+                Section(firstComponent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "시작",
+                            color = TextDarkGray,
+                            style = AppTypography.labelMedium
+                        )
+                        Text(
+                            text = "종료",
+                            color = TextDarkGray,
+                            style = AppTypography.labelMedium
+                        )
                     }
-                })
-        if (openTripSetBox) {
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .height(230.dp)
-                .offset(y = (-10).dp)
-                .background(BackgroundSky)
-                .zIndex(0f)
-                .padding(top = 10.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        onOpenTripSetBoxChange(true) // Box 클릭 시 openTripSetBox를 true로 설정
-                    })
-                }) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.padding(top = 10.dp)
-                ) {
-                    Section(firstComponent = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "시작",
-                                color = TextDarkGray,
-                                style = AppTypography.labelMedium
-                            )
-                            Text(
-                                text = "종료",
-                                color = TextDarkGray,
-                                style = AppTypography.labelMedium
-                            )
-                        }
-                    }, secondComponent = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            DateInputField(event.startDate, onValueChange = { newDate ->
-                                event = event.copy(startDate = newDate)
-                            })
-                            DateInputField(event.endDate, onValueChange = { newDate ->
-                                event = event.copy(endDate = newDate)
-                            })
-                        }
-                    }, padding = 10
-                    )
+                }, secondComponent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TravelDateField(travelPlan.startDate, onChange = onChangeStartDate)
+                        TravelDateField(travelPlan.endDate, onChange = onChangeEndDate)
+                    }
+                }, padding = 10
+                )
 
-                    Section(firstComponent = {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "함께하는 친구",
-                                color = TextDarkGray,
-                                style = AppTypography.labelMedium
-                            )
-                            ClickableLink()
-                        }
-                    }, secondComponent = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            SelectFriends()
-                        }
-                    }, padding = 0
-                    )
-                }
+                Section(firstComponent = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "함께하는 친구",
+                            color = TextDarkGray,
+                            style = AppTypography.labelMedium
+                        )
+                        ClickableLink()
+                    }
+                }, secondComponent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        SelectFriends()
+                    }
+                }, padding = 0
+                )
             }
-            if(showCaption) {
-                Text(text = "* 제목을 입력해주세요", color = ErrorRed, style = AppTypography.labelSmall)
+            when (currentError) {
+                Error.Both -> Text(
+                    text = "* 제목, 날짜를 입력해주세요",
+                    color = ErrorRed,
+                    style = AppTypography.labelSmall
+                )
+
+                Error.Title -> Text(
+                    text = "* 제목을 입력해주세요",
+                    color = ErrorRed,
+                    style = AppTypography.labelSmall
+                )
+
+                Error.Date -> Text(
+                    text = "* 날짜를 입력해주세요",
+                    color = ErrorRed,
+                    style = AppTypography.labelSmall
+                )
+                else -> {}
+
             }
         }
-
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DateInputField(value: String, onValueChange: (String) -> Unit) {
-    Box(
-        modifier = Modifier
-            .width(149.dp)
-            .height(44.dp)
-            .border(1.dp, MainNavy, RoundedCornerShape(10.dp))
-            .background(White, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center
-    ) {
-        Text(text = "YYYY/MM/DD", color = TextDarkGray, style = AppTypography.bodyMedium)
-    }
-
-    /*textField로 구현했으나 옳은 날짜인지 확인할 수 없는 + 포커싱 문제 발생으로 고민이 필요함... 일단 박스만 둘게요...*/
-
-//    OutlinedTextField(
-//        value = value,
-//        onValueChange = { newValue ->
-//            // 숫자만 입력 가능
-//            if (newValue.all { it.isDigit() || it == '/' }) {
-//                val cleanedValue = newValue.replace("/", "")
-//
-//                // 날짜 YYYY/MM/DD 포맷팅
-//                val formattedValue = when {
-//                    cleanedValue.length >= 6 -> {
-//                        "${cleanedValue.take(4)}/${cleanedValue.drop(4).take(2)}/${cleanedValue.drop(6).take(2)}"
-//                    }
-//                    cleanedValue.length >= 4 -> {
-//                        "${cleanedValue.take(4)}/${cleanedValue.drop(4).take(2)}"
-//                    }
-//                    else -> {
-//                        cleanedValue
-//                    }
-//                }
-//
-//                onValueChange(formattedValue)
-//            }
-//        },
-//        placeholder = {
-//            Text("YYYY/MM/DD", color = TextDarkGray, style = AppTypography.bodyMedium)
-//        },
-//        textStyle = TextStyle(
-//            color = TextBlack,
-//            textAlign = TextAlign.Start,  // 만약 중앙 정렬을 원한다면 TextAlign.Center로 변경
-//        ),
-//        keyboardOptions = KeyboardOptions.Default.copy(
-//            keyboardType = KeyboardType.Number // 숫자 입력을 위한 키보드 설정
-//        ),
-//        shape = RoundedCornerShape(10.dp),
-//        modifier = Modifier
-//            .width(149.dp)
-//            .padding(0.dp),  // 기본 패딩을 없앰
-//        colors = TextFieldDefaults.outlinedTextFieldColors(
-//            unfocusedBorderColor = MainNavy, // 예시로 unfocused 상태일 때의 테두리 색을 설정
-//            focusedBorderColor = MainNavy,   // focused 상태일 때의 테두리 색을 설정
-//            containerColor = Color.White      // 배경을 하얀색으로 설정
-//        ),
-//    )
-}
 
 @Composable
 fun ClickableLink() {
@@ -642,8 +575,6 @@ fun HistoryCard(history: History) {
         } else {
             OverCard(history)
         }
-
-
     }
 }
 
@@ -806,7 +737,7 @@ fun OverCard(history: History) {
                     text = history.content,
                     color = White,
                     style = AppTypography.labelMedium,
-                    )
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -820,6 +751,4 @@ fun OverCard(history: History) {
         }
 
     }
-
-
 }
