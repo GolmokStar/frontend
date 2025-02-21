@@ -36,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.3"
@@ -56,6 +57,7 @@ dependencies {
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.fitness)
 
 
     // 테스트 관련 의존성
@@ -75,6 +77,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("androidx.datastore:datastore-preferences:1.1.2")  // DataStore 라이브러리
     implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
-
+    // Places API
+    implementation("com.google.android.libraries.places:places:4.1.0")
+    implementation("com.android.volley:volley:1.2.1")
 
 }

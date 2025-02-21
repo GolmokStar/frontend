@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,12 +70,18 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import java.io.IOException
 
 @Composable
 fun MapScreen() {
@@ -92,6 +99,7 @@ fun MapScreen() {
     var savedLongitude by remember { mutableDoubleStateOf(0.0) }
     var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
     var selectedAddress by remember { mutableStateOf("") }
+    var selectedName by remember { mutableStateOf("") }
     var showLocationBox by remember { mutableStateOf(false) } // 박스 열기/닫기 상태 추가
     var permissionGranted by remember { mutableStateOf(false) } // 권한이 허용되었는지 여부
     var visibleBoxState by remember { mutableStateOf<String?>(null) }
@@ -99,19 +107,91 @@ fun MapScreen() {
 
     var showDialog by remember { mutableStateOf(false) }
 
+    // Places API 초기화
+    val apiKey = context.getString(R.string.google_API_key)
+    if (apiKey.isEmpty() || apiKey == "DEFAULT_API_KEY") {
+        Log.e("Places test", "API 키가 없습니다.")
+        return
+    }
 
-    fun getAddressFromLatLng(latLng: LatLng) {
-        val geocoder = Geocoder(context)
+    var placesClient: PlacesClient? by remember { mutableStateOf(null) }
+    var isPlacesInitialized by remember { mutableStateOf(false) }  // Places 초기화 상태를 추적
+
+    // Places 초기화
+    LaunchedEffect(apiKey) {
         try {
-            val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            // addresses가 null이 아니고, 비어있지 않은 경우에만 처리
-            if (!addresses.isNullOrEmpty()) {
-                selectedAddress = addresses[0]?.getAddressLine(0) ?: "주소를 가져올 수 없습니다."
-            } else {
-                selectedAddress = "주소를 가져올 수 없습니다."
-            }
+            Places.initialize(context, apiKey)
+            placesClient = Places.createClient(context)
+            isPlacesInitialized = true
         } catch (e: Exception) {
-            selectedAddress = "주소를 가져오는 데 실패했습니다."
+            Log.e("Places test", "PlacesClient 초기화 실패: ${e.message}")
+            isPlacesInitialized = false
+        }
+    }
+
+    // 좌표 → 주소 변환
+    fun getAddressFromLatLng(latLng: LatLng): String {
+        return try {
+            val geocoder = Geocoder(context)
+            val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+            val address = addresses?.getOrNull(0)?.getAddressLine(0) ?: "주소를 가져올 수 없습니다."
+            Log.d("Address", "주소: $address")  // 주소를 콘솔에 출력
+            address
+        } catch (e: IOException) {
+            Log.e("GeocoderError", "주소 변환 실패: ${e.message}")
+            "주소를 가져올 수 없습니다."
+        }
+    }
+
+    // 장소 ID로 장소 이름과 정보 가져오기
+    fun getPlaceNameFromId(placeId: String) {
+        val placeFields = listOf(Place.Field.NAME, Place.Field.TYPES)  // 장소 이름과 장소 유형 받아오기
+        val request = FetchPlaceRequest.builder(placeId, placeFields).build()
+
+        placesClient?.fetchPlace(request)
+            ?.addOnSuccessListener { response ->
+                val place = response.place
+                val placeName = place.name ?: "이름 없음"
+                val placeTypes = place.types?.joinToString(", ") ?: "유형 없음"
+                Log.d("PlaceDetails", "장소 이름: $placeName, 유형: $placeTypes")  // 장소 이름과 유형을 콘솔에 출력
+                selectedName = placeName
+            }
+            ?.addOnFailureListener { exception ->
+                Log.e("PlaceDetails", "장소 정보 가져오기 실패: ${exception.message}")
+                selectedName = "장소 정보를 가져올 수 없습니다."
+            }
+    }
+
+
+    // 주소로 장소 검색
+    fun getPlaceFromAddress(address: String) {
+        val request = FindAutocompletePredictionsRequest.builder()
+            .setQuery(address)
+            .build()
+
+        placesClient?.let { client ->
+            client.findAutocompletePredictions(request)
+                .addOnSuccessListener { response ->
+                    if (response.autocompletePredictions.isNotEmpty()) {
+                        val firstPrediction = response.autocompletePredictions[0]
+                        val placeId = firstPrediction.placeId
+                        val placeName = firstPrediction.getPrimaryText(null).toString()
+
+                        Log.d("PlaceSearch", "장소 이름: $placeName, Place ID: $placeId")  // 장소 이름과 Place ID를 콘솔에 출력
+                        selectedName = placeName
+                        getPlaceNameFromId(placeId)
+                    } else {
+                        selectedName = "장소를 찾을 수 없습니다."
+                        Log.d("PlaceSearch", "장소를 찾을 수 없습니다.")
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("PlaceSearch", "장소 검색 실패: ${exception.message}")
+                    selectedName = "장소를 검색할 수 없습니다."
+                }
+        } ?: run {
+            Log.e("PlacesClient", "PlacesClient 초기화 실패")
+            selectedName = "PlacesClient가 초기화되지 않았습니다."
         }
     }
 
@@ -180,7 +260,8 @@ fun MapScreen() {
                     markerColor = MainNavy // 마커 색상도 빨간색으로 초기화
                     visibleBoxState = "Navy" // 박스를 빨간 박스로 초기화
                     showLocationBox = true // 위치 박스 보여주기
-                    getAddressFromLatLng(latLng)
+                    selectedAddress = getAddressFromLatLng(latLng)
+                    getPlaceFromAddress(selectedAddress) // 주소를 기반으로 장소 이름 가져오기
 
                 }
             ) {
@@ -237,7 +318,7 @@ fun MapScreen() {
                         RedBox(
                             address = selectedAddress,
                             date = "2025-02-25",
-                            name = "성심당",
+                            name = selectedName,
                             onBoxClick = { selectedMarkerLocation = null },
                             onButtonClick = {
                                 // RedBox 버튼 클릭 시 YellowBox로 전환
@@ -252,7 +333,7 @@ fun MapScreen() {
                         YellowBox(
                             address = selectedAddress,
                             date = "2025-02-25",
-                            name = "성심당",
+                            name = selectedName,
                             onBoxClick = { selectedMarkerLocation = null },
                             onButtonClick = {
                                 // YellowBox 버튼 클릭 시 BlueBox로 전환
@@ -269,7 +350,7 @@ fun MapScreen() {
                         BlueBox(
                             address = selectedAddress,
                             date = "2025-02-25",
-                            name = "성심당",
+                            name = selectedName,
                             onButtonClick = { },
                             onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
                             extraText = "입닫고맛잇는빵먹기"
@@ -280,7 +361,7 @@ fun MapScreen() {
                         NavyBox(
                             address = selectedAddress,
                             date = "2025-02-25",
-                            name = "성심당",
+                            name = selectedName,
                             onButtonClick = {
 
                                 visibleBoxState = "Yellow"
@@ -398,8 +479,6 @@ fun DropdownMenuWithIcon(
     }
 }
 
-
-
 // 위치 목록 UI 컴포넌트
 @Composable
 fun LocationItemList() {
@@ -431,5 +510,3 @@ fun LocationItem(text: String, icon: @Composable () -> Unit) {
         Text(text = text, color = White, style = AppTypography.bodyMedium)
     }
 }
-
-
