@@ -41,8 +41,10 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.ui.screens.*
+import com.example.golmokstar.ui.viewmodel.GoogleAuthViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -60,14 +62,22 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(navController: NavHostController) {
+    val viewModel: GoogleAuthViewModel = viewModel()
+
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = {
+            if (currentRoute(navController) != "auth" && currentRoute(navController) != "signup") {
+                BottomNavigationBar(navController)
+            }
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.HomeScreen.route,
+            startDestination = "auth", // 🔹 앱 실행 시 첫 화면을 AuthScreen으로 설정
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("auth") { AuthHomeScreen(viewModel) }
+            composable("signup") { SignUpScreen() }
             composable(BottomNavItem.HomeScreen.route) { HomeScreen() }
             composable(BottomNavItem.CalendarScreen.route) { CalendarScreen(navController) }
             composable(BottomNavItem.MapScreen.route) { MapScreen() }
