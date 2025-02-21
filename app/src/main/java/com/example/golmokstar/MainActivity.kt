@@ -43,6 +43,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.ui.screens.*
+import kotlinx.coroutines.delay
 
 
 class MainActivity : ComponentActivity() {
@@ -52,14 +53,41 @@ class MainActivity : ComponentActivity() {
         setContent {
             GolmokStarTheme {
                 val navController = rememberNavController()
-                MainScreen(navController)
+
+                // NavHost 설정
+                NavHost(navController = navController, startDestination = "splash") {
+                    composable("splash") {
+                        SplashScreen()
+                        LaunchedEffect(Unit) {
+                            delay(3000) // 3초 대기 후
+                            val isLoggedIn = checkLoginStatus()
+                            if (isLoggedIn) {
+                                navController.navigate("main") {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("authHome") {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                }
+                            }
+                        }
+                    }
+                    composable("authHome") { AuthHomeScreen(navController) }
+                    composable("signUp") { SignUpScreen(navController) }
+                    composable("main") { MainScreen() }
+                }
             }
         }
+    }
+
+    private fun checkLoginStatus(): Boolean {
+        return false // 로그인 상태에 맞게 수정
     }
 }
 
 @Composable
-fun MainScreen(navController: NavHostController) {
+fun MainScreen() {
+    val navController = rememberNavController()
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->

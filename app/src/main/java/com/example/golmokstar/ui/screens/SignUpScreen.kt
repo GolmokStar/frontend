@@ -10,11 +10,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.*
 
 @Composable
-fun SignUpScreen() {
+fun SignUpScreen(navController: NavController) {
     var nickname by remember { mutableStateOf("") }
     var birthdate by remember { mutableStateOf("") }
     var selectedGender by remember { mutableStateOf("여성") }
@@ -26,6 +27,7 @@ fun SignUpScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -76,7 +78,12 @@ fun SignUpScreen() {
 
         // 가입 완료 버튼
         Button(
-            onClick = { /* 가입 완료 로직 */},
+            onClick = {
+                /* 가입 완료 로직 */
+                navController.navigate("main"){
+                    popUpTo("signup") { inclusive = true }
+                }
+            },
             enabled = isSignUpEnabled,
             modifier = Modifier
                 .fillMaxWidth()
@@ -249,6 +256,6 @@ fun PreviewSignUpScreen() {
             .fillMaxSize()
             .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
-        SignUpScreen()
+        //SignUpScreen()
     }
 }
