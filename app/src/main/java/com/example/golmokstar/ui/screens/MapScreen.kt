@@ -3,8 +3,8 @@ package com.example.golmokstar.ui.screens
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Geocoder
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
@@ -53,6 +53,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.example.golmokstar.R
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
@@ -71,9 +74,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -81,12 +81,10 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import java.io.IOException
 
 @Composable
 fun MapScreen() {
     val context = LocalContext.current
-    val dataStore = DataStoreModule(context)
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     val activity = context as? Activity
 
@@ -97,15 +95,19 @@ fun MapScreen() {
     var currentLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var savedLatitude by remember { mutableDoubleStateOf(0.0) }
     var savedLongitude by remember { mutableDoubleStateOf(0.0) }
-    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
-    var selectedAddress by remember { mutableStateOf("") }
-    var selectedName by remember { mutableStateOf("") }
+
     var showLocationBox by remember { mutableStateOf(false) } // 박스 열기/닫기 상태 추가
     var permissionGranted by remember { mutableStateOf(false) } // 권한이 허용되었는지 여부
     var visibleBoxState by remember { mutableStateOf<String?>(null) }
     var markerColor by remember { mutableStateOf(MarkerRed) } // 기본 색상 설정
 
     var showDialog by remember { mutableStateOf(false) }
+
+    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
+    var selectedName by remember { mutableStateOf("") }
+    var selectedAddress by remember { mutableStateOf("") }
+    var selectedTypes by remember { mutableStateOf("") }
+    var selectedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
 
     // Places API 초기화
     val apiKey = context.getString(R.string.google_API_key)
@@ -129,76 +131,51 @@ fun MapScreen() {
         }
     }
 
-    // 좌표 → 주소 변환
-    fun getAddressFromLatLng(latLng: LatLng): String {
-        return try {
-            val geocoder = Geocoder(context)
-            val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            val address = addresses?.getOrNull(0)?.getAddressLine(0) ?: "주소를 가져올 수 없습니다."
-            Log.d("Address", "주소: $address")  // 주소를 콘솔에 출력
-            address
-        } catch (e: IOException) {
-            Log.e("GeocoderError", "주소 변환 실패: ${e.message}")
-            "주소를 가져올 수 없습니다."
-        }
-    }
+    fun getPlaceDetails(context: Context, placeId: String) {
+        val apiKey = context.getString(R.string.google_API_key) // API 키 가져오기
+        val url = "https://maps.googleapis.com/maps/api/place/details/json" +
+                "?place_id=$placeId" +
+                "&language=ko" +
+                "&key=$apiKey"
 
-    fun getPlaceNameFromId(placeId: String) {
-        val placeFields = listOf(Place.Field.NAME, Place.Field.TYPES, Place.Field.ADDRESS, Place.Field.LAT_LNG)
-        val request = FetchPlaceRequest.builder(placeId, placeFields).build()
+        val request = JsonObjectRequest(
+            Request.Method.GET, url, null,
+            { response ->
+                try {
+                    // API 응답 상태 확인
+                    val status = response.getString("status")
+                    if (status == "OK") {
+                        val result = response.getJSONObject("result")
+                        val address = result.getString("formatted_address")
 
-        placesClient?.fetchPlace(request)
-            ?.addOnSuccessListener { response ->
-                val place = response.place
-                Log.d("PlaceDetails", "응답 데이터: " + place.toString())
+                        // "대한민국"이 포함되어 있으면 제거
+                        if (address.contains("대한민국")) {
+                            selectedAddress = address.replace("대한민국", "").trim()
+                        }
 
-                val placeName = place.name ?: "이름 없음"
-                val placeTypes = place.types?.joinToString(", ") ?: "유형 없음"
-                val placeAddress = place.address ?: "주소 없음"
-                val placeLatLng = place.latLng ?: LatLng(0.0, 0.0)
+                        // 장소의 유형 받아오기
+                        val types = result.getJSONArray("types")
+                        val placeTypes = mutableListOf<String>()
+                        for (i in 0 until types.length()) {
+                            placeTypes.add(types.getString(i))
+                        }
 
-                Log.d("PlaceDetails", "장소 이름: $placeName, 유형: $placeTypes, 주소: $placeAddress")  // 추가된 필드 정보 출력
-
-                selectedName = placeName
-                selectedAddress = placeAddress
-                currentLocation = placeLatLng // 위치 정보 업데이트
-            }
-            ?.addOnFailureListener { exception ->
-                Log.e("PlaceDetails", "장소 정보 가져오기 실패: ${exception.message}")
-                selectedName = "장소 정보를 가져올 수 없습니다."
-            }
-    }
-
-    // 주소로 장소 검색
-    fun getPlaceFromAddress(address: String) {
-        val request = FindAutocompletePredictionsRequest.builder()
-            .setQuery(address)
-            .build()
-
-        placesClient?.let { client ->
-            client.findAutocompletePredictions(request)
-                .addOnSuccessListener { response ->
-                    if (response.autocompletePredictions.isNotEmpty()) {
-                        val firstPrediction = response.autocompletePredictions[0]
-                        val placeId = firstPrediction.placeId
-                        val placeName = firstPrediction.getPrimaryText(null).toString()
-
-                        Log.d("PlaceSearch", "장소 이름: $placeName, Place ID: $placeId")  // 장소 이름과 Place ID를 콘솔에 출력
-                        selectedName = placeName
-                        getPlaceNameFromId(placeId)
+                        Log.d("POIPlace", "정확한 주소: $selectedAddress")
+                        Log.d("POIPlace", "장소 유형: $placeTypes")
+                    } else if (status == "NOT_FOUND") {
+                        Log.e("POIPlace", "장소를 찾을 수 없습니다. 제공된 place_id가 올바른지 확인하세요.")
                     } else {
-                        selectedName = "장소를 찾을 수 없습니다."
-                        Log.d("PlaceSearch", "장소를 찾을 수 없습니다.")
+                        Log.e("POIPlace", "API 요청 실패, 상태: $status")
                     }
+                } catch (e: Exception) {
+                    Log.e("POIPlace", "JSON 파싱 오류", e)
                 }
-                .addOnFailureListener { exception ->
-                    Log.e("PlaceSearch", "장소 검색 실패: ${exception.message}")
-                    selectedName = "장소를 검색할 수 없습니다."
-                }
-        } ?: run {
-            Log.e("PlacesClient", "PlacesClient 초기화 실패")
-            selectedName = "PlacesClient가 초기되지 않았습니다."
-        }
+            },
+            { error ->
+                Log.e("POIPlace", "API 요청 오류", error)
+            })
+
+        Volley.newRequestQueue(context).add(request)
     }
 
     // 실시간 위치 업데이트를 위한 LocationCallback 설정
@@ -219,33 +196,34 @@ fun MapScreen() {
     }
 
     // 권한 체크 후 실시간 위치 가져오기
-
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission())
-    { isGranted -> permissionGranted = isGranted // 권한 허용 여부 상태 업데이트
-        // 권한이 허용되었을 때 위치 업데이트 요청
-        if (isGranted) { fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper()) }
-        else { Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show() }
+    { isGranted ->
+        permissionGranted = isGranted
+        if (isGranted) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        } else {
+            Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    // 권한 체크 후 실시간 위치 가져오기
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             permissionGranted = true
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-        } else { activity?.let { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) } }
-        dataStore.getLatitude.collect { savedLatitude = it }
-        dataStore.getLongitude.collect { savedLongitude = it }
+        } else {
+            activity?.let { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+        }
     }
 
-    // 카메라 위치 설정
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(currentLocation, 17f)
+        position = CameraPosition.fromLatLngZoom(currentLocation, 18f)
     }
 
-    // 위치가 업데이트 될 때마다 카메라 이동
     LaunchedEffect(currentLocation) {
         if (currentLocation.latitude != 0.0 && currentLocation.longitude != 0.0) {
-            cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
+            if (cameraPositionState.position.target != currentLocation) {
+                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 18f))
+            }
         }
     }
 
@@ -260,15 +238,31 @@ fun MapScreen() {
                 cameraPositionState = cameraPositionState,
                 properties = properties,
                 uiSettings = uiSettings,
-                onMapClick = { latLng ->
-                    // 지도 클릭 시: 마커 위치와 박스를 초기화합니다.
-                    selectedMarkerLocation = latLng
-                    markerColor = MainNavy // 마커 색상도 빨간색으로 초기화
-                    visibleBoxState = "Navy" // 박스를 빨간 박스로 초기화
-                    showLocationBox = true // 위치 박스 보여주기
-                    selectedAddress = getAddressFromLatLng(latLng)
-                    getPlaceFromAddress(selectedAddress) // 주소를 기반으로 장소 이름 가져오기
+                onPOIClick = { poi ->
+                    poi?.let {
+                        // POI 이름, 위치, 주소 가져오기
+                        val poiName = it.name?.lines()?.firstOrNull() ?: "이름 없음"
+                        val poiLatLng = it.latLng
+                        val placeId = it.placeId // placeId를 가져옴
 
+                        getPlaceDetails(context, placeId)
+
+                        Log.d("POIPlace", "이름: $poiName")
+                        Log.d("POIPlace", "위치: ${poiLatLng?.latitude}, ${poiLatLng?.longitude}")
+
+                        // 선택된 위치와 정보 설정
+                        selectedMarkerLocation = poiLatLng
+                        selectedName = poiName
+                        selectedLocation = poiLatLng
+                        markerColor = MainNavy
+                        visibleBoxState = "Navy"
+
+                        // 마커 색상 및 정보 박스 표시
+                        showLocationBox = true
+                    } ?: run {
+                        Log.e("POIPlace", "POI가 null입니다.")
+                        Toast.makeText(context, "POI 정보가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             ) {
                 // 저장된 위도, 경도가 있으면 마커 표시
@@ -276,11 +270,11 @@ fun MapScreen() {
                     Marker(
                         state = MarkerState(position = LatLng(savedLatitude, savedLongitude)),
                         title = "찜한 위치",
-                        icon = redMarkerPin(context) // 초기 마커는 빨간색
+                        icon = navyMarkerPin(context) //
                     )
                 }
 
-                // 지도 클릭 후 추가된 마커
+                // 선택된 마커 위치에 핀 표시
                 selectedMarkerLocation?.let {
                     Marker(
                         state = MarkerState(position = it),
@@ -290,7 +284,7 @@ fun MapScreen() {
                             MarkerYellow -> yellowMarkerPin(context)
                             MarkerBlue -> blueMarkerPin(context)
                             MainNavy -> navyMarkerPin(context)
-                            else -> redMarkerPin(context) // 기본 색상으로 처리
+                            else -> navyMarkerPin(context) // 기본 색상으로 처리
                         }
                     )
                 }
@@ -298,11 +292,12 @@ fun MapScreen() {
 
             // 내 위치 버튼 → 오른쪽 하단에 배치
             FloatingActionButton(onClick = {
-                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
+                // 내 위치 버튼을 눌렀을 때만 카메라 이동
+                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 18f))
             }, modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp), containerColor = White) {
-                Icon(painter = painterResource(R.drawable.my_location_icon),  contentDescription = "내 위치 이동", Modifier.size(20.dp), tint = MainNavy  )
+                Icon(painter = painterResource(R.drawable.my_location_icon), contentDescription = "내 위치 이동", Modifier.size(28.dp), tint = MainNavy)
             }
 
 
@@ -400,7 +395,6 @@ fun MapScreen() {
                 // Box 안의 목록
                 LocationItemList()
             }
-
 
             // 상단 왼쪽에 드롭다운 배치
             Box(modifier = Modifier.fillMaxSize()) {
