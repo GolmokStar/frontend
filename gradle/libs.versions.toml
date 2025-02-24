@@ -11,6 +11,14 @@ composeBom = "2024.04.01"
 androidx-navigation-compose = "2.7.7" # 최신 버전
 androidx-material3 = "1.2.0"
 composeUi = "1.6.2" # Compose UI 개별 버전 추가 (선택 사항)
+retrofit = "2.9.0"
+okhttp = "4.9.3"
+coroutines = "1.7.3"
+hilt = "2.48"
+googleAuth = "20.7.0"
+playServicesIdentity = "18.0.1"
+datastore = "1.1.2"
+accompanistPermissions = "0.31.1-alpha"
 
 
 [libraries]
@@ -30,9 +38,34 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigation-compose" }
 androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-material3" }
 
+# Google 로그인 관련
+google-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "googleAuth" }
+google-identity = { module = "com.google.android.gms:play-services-identity", version.ref = "playServicesIdentity" }
+
+# Retrofit + OkHttp (서버 통신)
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
+# Coroutines (비동기 처리)
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
+
+# Hilt (의존성 주입)
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+
+# DataStore
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
+# 권한 요청
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" } # AGP 버전 통일
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version = "1.9.10" }

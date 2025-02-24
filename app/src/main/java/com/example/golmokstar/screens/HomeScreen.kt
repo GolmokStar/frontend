@@ -1,4 +1,4 @@
-package com.example.golmokstar.ui.screens
+package com.example.golmokstar.screens
 
 import android.content.Intent
 import android.net.Uri

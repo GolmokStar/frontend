@@ -1,8 +1,14 @@
+import org.jetbrains.kotlin.konan.properties.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.kotlin.kapt)
 }
+
+val properties = Properties().apply {load(project.rootProject.file("local.properties").inputStream())}
 
 android {
     namespace = "com.example.golmokstar"
@@ -16,7 +22,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${project.findProperty("google.client.id")}\"")
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("base.url")}\"")
     }
+
+
 
     buildTypes {
         release {
@@ -39,6 +50,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -72,21 +84,44 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Google Maps & 위치 서비스
-    implementation("com.google.maps.android:maps-compose:2.11.4")
-    implementation("com.google.android.gms:play-services-maps:19.0.0")
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    // 🔹 Google 로그인
+    implementation(libs.google.auth)
+    implementation(libs.google.identity)
 
-    // DataStore 라이브러리
-    implementation("androidx.datastore:datastore-preferences:1.1.2")
+    // 🔹 Retrofit & OkHttp (서버 통신)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
 
-    // 권한 요청 라이브러리
-    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
+    // 🔹 Coroutines (비동기 처리)
+    implementation(libs.coroutines.android)
+    implementation(libs.coroutines.play.services)
 
-    // Google 로그인
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    // 🔹 Hilt (의존성 주입)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    // 🔹 DataStore
+    implementation(libs.datastore.preferences)
 
+    // 🔹 권한 요청 라이브러리
+    implementation(libs.accompanist.permissions)
+
+    // ✅ Google Maps SDK for Android
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+
+    // ✅ Maps Utils (마커 클러스터링 및 추가 기능)
+    implementation("com.google.maps.android:android-maps-utils:3.4.0")
+
+    // ✅ Google Play Services - 위치 API (Fused Location Provider)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+
+    // ✅ Jetpack Compose용 Google Maps 라이브러리 (필수)
+    implementation("com.google.maps.android:maps-compose:2.11.2")
+
+
+    implementation("com.squareup:javapoet:1.13.0") // ✅ Explicitly force JavaPoet version
 
 }

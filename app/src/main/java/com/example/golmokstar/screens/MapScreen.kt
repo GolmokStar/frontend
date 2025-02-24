@@ -1,4 +1,4 @@
-package com.example.golmokstar.ui.screens
+package com.example.golmokstar.screens
 
 
 import android.Manifest
@@ -292,7 +292,8 @@ fun MapScreen() {
                             topLeftText = "",
                             topLeft = { CustomButton {
                                 visibleBoxState = "Red"
-                                markerColor = MarkerRed }}
+                                markerColor = MarkerRed }
+                            }
                         )
                     }
                 }
