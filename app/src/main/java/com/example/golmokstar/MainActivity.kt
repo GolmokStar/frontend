@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.ui.screens.*
-import com.example.golmokstar.ui.viewmodel.GoogleAuthViewModel
+//import com.example.golmokstar.viewmodel.GoogleAuthViewModel
 import kotlinx.coroutines.delay
 
 
@@ -55,13 +55,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             GolmokStarTheme {
                 val navController = rememberNavController()
-                val viewModel: GoogleAuthViewModel = viewModel()
+                //val viewModel: GoogleAuthViewModel = viewModel()
                 // NavHost 설정
                 NavHost(navController = navController, startDestination = "splash") {
                     composable("splash") {
                         SplashScreen()
                         LaunchedEffect(Unit) {
-                            delay(3000) // 3초 대기 후
+                            delay(1000) // 1초 대기 후
                             val isLoggedIn = checkLoginStatus()
                             if (isLoggedIn) {
                                 navController.navigate("main") {
@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                    composable("authHome") { AuthHomeScreen(viewModel) }
+                    //composable("authHome") { AuthHomeScreen(viewModel) }
                     composable("signUp") { SignUpScreen(navController) }
                     composable("main") { MainScreen() }
                 }
