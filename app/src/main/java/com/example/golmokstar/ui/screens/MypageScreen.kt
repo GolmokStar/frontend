@@ -1,4 +1,4 @@
-package com.example.golmokstar.screens
+package com.example.golmokstar.ui.screens
 
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize

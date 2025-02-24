@@ -19,6 +19,11 @@ googleAuth = "20.7.0"
 playServicesIdentity = "18.0.1"
 datastore = "1.1.2"
 accompanistPermissions = "0.31.1-alpha"
+googleMaps = "18.1.0"
+googleMapsUtils = "3.4.0"
+googlePlayServicesLocation = "21.0.1"
+mapsCompose = "2.11.2"
+
 
 
 [libraries]
@@ -61,6 +66,13 @@ datastore-preferences = { module = "androidx.datastore:datastore-preferences", v
 # 권한 요청
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 
+# Google Maps SDK for Android
+google-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "googleMaps" }
+google-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "googleMapsUtils" }
+google-play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "googlePlayServicesLocation" }
+
+# Jetpack Compose용 Google Maps 라이브러리
+maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

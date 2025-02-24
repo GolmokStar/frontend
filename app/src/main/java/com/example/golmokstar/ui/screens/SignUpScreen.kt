@@ -1,5 +1,6 @@
-package com.example.golmokstar.screens
+package com.example.golmokstar.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,11 +11,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.golmokstar.R
+import com.example.golmokstar.google.GoogleAuthViewModel
+import com.example.golmokstar.network.AuthApiService
+import com.example.golmokstar.network.dto.SignUpRequest
+import com.example.golmokstar.network.dto.SignUpResponse
+import com.example.golmokstar.ui.components.BirthdateField
+import com.example.golmokstar.ui.components.NickNameTextField
 import com.example.golmokstar.ui.theme.*
+import com.example.golmokstar.utils.formatToDate
+import kotlinx.coroutines.launch
 
 @Composable
-fun SignUpScreen() {
+fun SignUpScreen(navController: NavController, authApiService: AuthApiService,  googleId: String) {
+    val parsedGoogleId = googleId ?: "No Google ID" // ✅ 기본값 설정
+
     var nickname by remember { mutableStateOf("") }
     var birthdate by remember { mutableStateOf("") }
     var selectedGender by remember { mutableStateOf("여성") }
@@ -22,6 +35,8 @@ fun SignUpScreen() {
 
     val isBirthdateValid = birthdate.length == 8 && birthdate.all { it.isDigit() }
     val isSignUpEnabled = nickname.length >= 2 && selectedGender.isNotBlank() && isBirthdateValid
+
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -44,10 +59,7 @@ fun SignUpScreen() {
 
         // 성별 선택
         LabelWithAsterisk("성별", Modifier.align(Alignment.Start))
-        GenderSelection(
-            selectedGender = selectedGender,
-            onGenderSelected = { selectedGender = it }
-        )
+        GenderSelection(selectedGender) {selectedGender = it}
         Spacer(modifier = Modifier.padding(4.dp))
 
         // 생년월일 입력
@@ -76,7 +88,26 @@ fun SignUpScreen() {
 
         // 가입 완료 버튼
         Button(
-            onClick = { /* 가입 완료 로직 */},
+            onClick = {
+                coroutineScope.launch {
+                    val request = SignUpRequest(
+                        googleId = parsedGoogleId, // ✅ Google ID 추가
+                        nickname = nickname,
+                        gender = selectedGender,
+                        birthDate = birthdate.formatToDate(),
+                        interestAreas = selectedStyles
+                    )
+                    val response = authApiService.signUp(request)
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { handleSignUpResponse(it, navController) }
+                    } else {
+                        Log.e("SignUpScreen", request.toString())
+                        Log.e("SignUpScreen", response.toString())
+                        Log.e("SignUpScreen", "회원가입 실패: ${response.errorBody()?.string()}")
+                    }
+                }
+            },
             enabled = isSignUpEnabled,
             modifier = Modifier
                 .fillMaxWidth()
@@ -237,18 +268,12 @@ fun TravelStyleButton(
     }
 }
 
+// ✅ 서버 응답을 처리하는 함수
+fun handleSignUpResponse(responseBody: SignUpResponse, navController: NavController) {
+    val accessToken = responseBody.accessToken // ✅ 객체에서 직접 googleId 추출
+    val refreshToken = responseBody.refreshToken
 
-
-@Preview(name = "Pixel 5", device = "id:pixel_5",
-    showBackground = true,
-    showSystemUi = true)
-@Composable
-fun PreviewSignUpScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
-    ) {
-        SignUpScreen()
+    navController.navigate("main?accessToken=$accessToken&refreshToken=$refreshToken") {
+        popUpTo("authHome") { inclusive = true }
     }
 }

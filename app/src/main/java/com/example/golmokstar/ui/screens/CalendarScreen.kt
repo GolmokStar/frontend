@@ -1,4 +1,4 @@
-package com.example.golmokstar.screens
+package com.example.golmokstar.ui.screens
 
 
 import androidx.compose.foundation.*

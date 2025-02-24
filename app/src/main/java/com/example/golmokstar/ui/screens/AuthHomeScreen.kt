@@ -1,4 +1,4 @@
-package com.example.golmokstar.screens
+package com.example.golmokstar.ui.screens
 
 import android.app.Activity
 import android.app.PendingIntent
@@ -39,24 +39,30 @@ import com.example.golmokstar.ui.theme.TextBlack
 import com.example.golmokstar.ui.theme.White
 import kotlinx.coroutines.launch
 import com.example.golmokstar.R
+import com.example.golmokstar.network.dto.GoogleTokenResponse
+import com.example.golmokstar.network.dto.SignUpResponse
+import org.json.JSONObject
 
 @Composable
 fun AuthHomeScreen(viewModel: GoogleAuthViewModel = hiltViewModel(), navController: NavController) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var idToken by remember { mutableStateOf<String?>(null)}
-    var loginStatus by remember { mutableStateOf<String?>(null)}
+    var loginStatus by remember { mutableStateOf<String?>(null) }
 
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         coroutineScope.launch {
             val token = viewModel.handleSignInResult(result.data)
-            idToken = token
+
             if (token != null) {
-                val responseCode = viewModel.sendTokenToServer(token)
-                handleServerResponse(responseCode, navController)
+                Log.d("AuthHomeScreen", "Google ID Token: $token")
+                val (responseCode, responseBody) = viewModel.sendTokenToServer(token)
+
+                if (responseBody != null) {
+                    handleServerResponse(responseCode, responseBody, navController)
+                }
             } else {
                 loginStatus = "로그인 실패"
             }
@@ -101,9 +107,13 @@ fun AuthHomeScreen(viewModel: GoogleAuthViewModel = hiltViewModel(), navControll
                         coroutineScope.launch {
                             try {
                                 val result = viewModel.signIn(context as Activity)
-                                googleSignInLauncher.launch(IntentSenderRequest.Builder(result.pendingIntent.intentSender).build())
+                                googleSignInLauncher.launch(
+                                    IntentSenderRequest.Builder(result.pendingIntent.intentSender)
+                                        .build()
+                                )
                             } catch (e: Exception) {
-                                Toast.makeText(context, "로그인 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "로그인 오류: ${e.message}", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         }
                     },
@@ -134,11 +144,38 @@ fun AuthHomeScreen(viewModel: GoogleAuthViewModel = hiltViewModel(), navControll
 }
 
 // ✅ 서버 응답을 처리하는 함수
-fun handleServerResponse(responseCode: Int, navController: NavController) {
+fun handleServerResponse(responseCode: Int, responseBody: Any, navController: NavController) {
+    Log.d("handleServerResponse", "서버 응답 코드: $responseCode")
+
     when (responseCode) {
-        200 -> navController.navigate("signUp") { popUpTo("authHome") { inclusive = true } }
-        201 -> navController.navigate("signUp") { popUpTo("authHome") { inclusive = true } }
-        else -> Log.e("AuthHomeScreen", "서버 응답 오류: $responseCode")
+        200 -> {
+            Log.d("responseType", responseBody::class.simpleName.toString())
+
+            if (responseBody is SignUpResponse) { // ✅ 응답 타입이 GoogleTokenResponse인지 확인
+                val accessToken = responseBody.accessToken
+                val refreshToken = responseBody.refreshToken
+                Log.d("accessToken", accessToken)
+                Log.d("refreshToken", refreshToken)
+
+                navController.navigate("main?accessToken=$accessToken&refreshToken=$refreshToken") {
+                    popUpTo("authHome") { inclusive = true }
+                }
+            } else {
+                Log.e("handleServerResponse", "200 응답이지만 예상치 못한 응답 타입")
+            }
+        }
+        201 -> {
+            if (responseBody is GoogleTokenResponse) { // ✅ 응답 타입이 SignUpResponse인지 확인
+                val googleId = responseBody.googleId
+
+                Log.d("handleServerResponse", "Navigating to signUp with googleId: $googleId")
+                navController.navigate("signUp?googleId=$googleId") {
+                    popUpTo("authHome") { inclusive = true }
+                }
+            } else {
+                Log.e("handleServerResponse", "201 응답이지만 예상치 못한 응답 타입")
+            }
+        }
+        else -> Log.e("handleServerResponse", "서버 응답 오류: $responseCode")
     }
 }
-

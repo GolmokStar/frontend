@@ -1,4 +1,4 @@
-package com.example.golmokstar.screens
+package com.example.golmokstar.ui.components
 
 import android.content.Context
 import android.graphics.Bitmap
