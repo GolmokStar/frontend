@@ -53,6 +53,20 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.golmokstar.R
+import com.example.golmokstar.repository.DataStoreModule
+import com.example.golmokstar.ui.components.BlueBox
+import com.example.golmokstar.ui.components.BlueMarkerIcon
+import com.example.golmokstar.ui.components.CustomButton
+import com.example.golmokstar.ui.components.NavyBox
+import com.example.golmokstar.ui.components.NavyMarkerIcon
+import com.example.golmokstar.ui.components.RedBox
+import com.example.golmokstar.ui.components.RedMarkerIcon
+import com.example.golmokstar.ui.components.YellowBox
+import com.example.golmokstar.ui.components.YellowMarkerIcon
+import com.example.golmokstar.ui.components.blueMarkerPin
+import com.example.golmokstar.ui.components.navyMarkerPin
+import com.example.golmokstar.ui.components.redMarkerPin
+import com.example.golmokstar.ui.components.yellowMarkerPin
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
@@ -292,7 +306,8 @@ fun MapScreen() {
                             topLeftText = "",
                             topLeft = { CustomButton {
                                 visibleBoxState = "Red"
-                                markerColor = MarkerRed }}
+                                markerColor = MarkerRed }
+                            }
                         )
                     }
                 }

@@ -1,4 +1,4 @@
-package com.example.golmokstar.ui.screens
+package com.example.golmokstar.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.golmokstar.R
+import com.example.golmokstar.ui.screens.Error
+import com.example.golmokstar.ui.screens.TravelPlan
+import com.example.golmokstar.ui.screens.TravelState
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy

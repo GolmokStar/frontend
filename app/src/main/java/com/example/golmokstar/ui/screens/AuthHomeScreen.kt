@@ -1,77 +1,79 @@
 package com.example.golmokstar.ui.screens
 
 import android.app.Activity
-import android.content.Context
+import android.app.PendingIntent
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.golmokstar.R
-import com.example.golmokstar.ui.theme.*
-import com.example.golmokstar.ui.viewmodel.GoogleAuthViewModel
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
-import com.google.android.gms.auth.api.identity.SignInClient
-import com.google.android.gms.auth.api.identity.Identity
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.example.golmokstar.google.GoogleAuthViewModel
+import com.example.golmokstar.ui.theme.IconGray
+import com.example.golmokstar.ui.theme.TextBlack
+import com.example.golmokstar.ui.theme.White
 import kotlinx.coroutines.launch
-
-// Google Sign-In Client 설정
-fun getGoogleSignInClient(context: Context): SignInClient {
-    return Identity.getSignInClient(context)
-}
-
-fun getSignInRequest(): BeginSignInRequest {
-    return BeginSignInRequest.builder()
-        .setGoogleIdTokenRequestOptions(
-            BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-                .setSupported(true)
-                .setServerClientId("668625350738-r6742iiotve7hl5qsus86jrqic1ulud2.apps.googleusercontent.com") // 실제 OAuth 클라이언트 ID 입력
-                .setFilterByAuthorizedAccounts(false)
-                .build()
-        )
-        .setAutoSelectEnabled(true)
-        .build()
-}
+import com.example.golmokstar.R
+import com.example.golmokstar.network.dto.GoogleTokenResponse
+import com.example.golmokstar.network.dto.SignUpResponse
+import org.json.JSONObject
 
 @Composable
-fun AuthHomeScreen(viewModel: GoogleAuthViewModel = viewModel()) {
+fun AuthHomeScreen(viewModel: GoogleAuthViewModel = hiltViewModel(), navController: NavController) {
     val context = LocalContext.current
-    val activity = context as Activity
     val coroutineScope = rememberCoroutineScope()
 
-    var idToken by remember { mutableStateOf<String?>(null) }
-    var serverResponse by remember { mutableStateOf<String?>(null) }
+    var loginStatus by remember { mutableStateOf<String?>(null) }
 
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         coroutineScope.launch {
-            viewModel.handleSignInResult(result) { token ->
-                idToken = token
-                token?.let {
-                    // 서버로 idToken 전송하는 함수
-                    Log.d("idToken", idToken.toString())
+            val token = viewModel.handleSignInResult(result.data)
+
+            if (token != null) {
+                Log.d("AuthHomeScreen", "Google ID Token: $token")
+                val (responseCode, responseBody) = viewModel.sendTokenToServer(token)
+
+                if (responseBody != null) {
+                    handleServerResponse(responseCode, responseBody, navController)
                 }
+            } else {
+                loginStatus = "로그인 실패"
             }
+
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(White)
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -103,9 +105,16 @@ fun AuthHomeScreen(viewModel: GoogleAuthViewModel = viewModel()) {
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            val signInResult = viewModel.signIn(activity) // BeginSignInResult 반환
-                            val signInIntentSender = signInResult.pendingIntent.intentSender
-                            googleSignInLauncher.launch(IntentSenderRequest.Builder(signInIntentSender).build())
+                            try {
+                                val result = viewModel.signIn(context as Activity)
+                                googleSignInLauncher.launch(
+                                    IntentSenderRequest.Builder(result.pendingIntent.intentSender)
+                                        .build()
+                                )
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "로그인 오류: ${e.message}", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
                         }
                     },
                     shape = RoundedCornerShape(10.dp),
@@ -128,26 +137,45 @@ fun AuthHomeScreen(viewModel: GoogleAuthViewModel = viewModel()) {
                         Spacer(modifier = Modifier.width(10.dp))
                         Text("Continue with Google", fontSize = 16.sp, color = TextBlack)
                     }
-
-
                 }
             }
         }
     }
 }
 
+// ✅ 서버 응답을 처리하는 함수
+fun handleServerResponse(responseCode: Int, responseBody: Any, navController: NavController) {
+    Log.d("handleServerResponse", "서버 응답 코드: $responseCode")
 
+    when (responseCode) {
+        200 -> {
+            Log.d("responseType", responseBody::class.simpleName.toString())
 
-@Preview(name = "Pixel 5", device = "id:pixel_5",
-    showBackground = true,
-    showSystemUi = true)
-@Composable
-fun PreviewAuthHomeScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
-    ) {
-        AuthHomeScreen()
+            if (responseBody is SignUpResponse) { // ✅ 응답 타입이 GoogleTokenResponse인지 확인
+                val accessToken = responseBody.accessToken
+                val refreshToken = responseBody.refreshToken
+                Log.d("accessToken", accessToken)
+                Log.d("refreshToken", refreshToken)
+
+                navController.navigate("main?accessToken=$accessToken&refreshToken=$refreshToken") {
+                    popUpTo("authHome") { inclusive = true }
+                }
+            } else {
+                Log.e("handleServerResponse", "200 응답이지만 예상치 못한 응답 타입")
+            }
+        }
+        201 -> {
+            if (responseBody is GoogleTokenResponse) { // ✅ 응답 타입이 SignUpResponse인지 확인
+                val googleId = responseBody.googleId
+
+                Log.d("handleServerResponse", "Navigating to signUp with googleId: $googleId")
+                navController.navigate("signUp?googleId=$googleId") {
+                    popUpTo("authHome") { inclusive = true }
+                }
+            } else {
+                Log.e("handleServerResponse", "201 응답이지만 예상치 못한 응답 타입")
+            }
+        }
+        else -> Log.e("handleServerResponse", "서버 응답 오류: $responseCode")
     }
 }

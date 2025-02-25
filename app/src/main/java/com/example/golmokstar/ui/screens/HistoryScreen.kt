@@ -54,6 +54,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.golmokstar.R
+import com.example.golmokstar.ui.components.NavyBox
+import com.example.golmokstar.ui.components.YellowMarkerIcon
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
 import com.example.golmokstar.ui.theme.IconGray
