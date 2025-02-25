@@ -18,6 +18,7 @@ import com.example.golmokstar.google.GoogleAuthViewModel
 import com.example.golmokstar.network.AuthApiService
 import com.example.golmokstar.network.dto.SignUpRequest
 import com.example.golmokstar.network.dto.SignUpResponse
+import com.example.golmokstar.storage.TokenManager
 import com.example.golmokstar.ui.components.BirthdateField
 import com.example.golmokstar.ui.components.NickNameTextField
 import com.example.golmokstar.ui.theme.*
@@ -273,7 +274,9 @@ fun handleSignUpResponse(responseBody: SignUpResponse, navController: NavControl
     val accessToken = responseBody.accessToken // ✅ 객체에서 직접 googleId 추출
     val refreshToken = responseBody.refreshToken
 
-    navController.navigate("main?accessToken=$accessToken&refreshToken=$refreshToken") {
+    TokenManager.saveTokens(responseBody.accessToken, responseBody.refreshToken)
+
+    navController.navigate("main") {
         popUpTo("authHome") { inclusive = true }
     }
 }

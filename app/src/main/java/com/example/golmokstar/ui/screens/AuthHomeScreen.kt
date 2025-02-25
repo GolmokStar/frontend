@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import com.example.golmokstar.R
 import com.example.golmokstar.network.dto.GoogleTokenResponse
 import com.example.golmokstar.network.dto.SignUpResponse
+import com.example.golmokstar.storage.TokenManager
 import org.json.JSONObject
 
 @Composable
@@ -157,7 +158,9 @@ fun handleServerResponse(responseCode: Int, responseBody: Any, navController: Na
                 Log.d("accessToken", accessToken)
                 Log.d("refreshToken", refreshToken)
 
-                navController.navigate("main?accessToken=$accessToken&refreshToken=$refreshToken") {
+                TokenManager.saveTokens(responseBody.accessToken, responseBody.refreshToken)
+
+                navController.navigate("main") {
                     popUpTo("authHome") { inclusive = true }
                 }
             } else {

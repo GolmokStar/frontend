@@ -38,11 +38,8 @@ fun AppNavGraph(
             val googleId = backStackEntry.arguments?.getString("googleId") ?: "" // ✅ `null`이면 빈 문자열로 처리
             SignUpScreen(navController, authApiService, googleId)
         }
-        composable("main?accessToken={accessToken}&refreshToken={refreshToken}") { backStackEntry ->
-            val accessToken = backStackEntry.arguments?.getString("accessToken") ?: ""
-            val refreshToken = backStackEntry.arguments?.getString("refreshToken") ?: ""
-
-            MainScreen(accessToken, refreshToken) // ✅ 전달된 값 사용
+        composable("main") {
+            MainScreen() // ✅ 전달된 값 사용
         }
     }
 }
