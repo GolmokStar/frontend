@@ -14,7 +14,7 @@ import com.example.golmokstar.navigation.BottomNavigationBar
 import com.example.golmokstar.navigation.BottomNavItem
 
 @Composable
-fun MainScreen(accessToken: String, refreshToken: String) {
+fun MainScreen() {
     val navController = rememberNavController()
 
     Scaffold(
