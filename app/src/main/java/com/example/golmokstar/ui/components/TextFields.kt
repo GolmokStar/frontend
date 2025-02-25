@@ -1,4 +1,4 @@
-package com.example.golmokstar.ui.screens
+package com.example.golmokstar.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,32 +34,17 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.example.golmokstar.R
+import com.example.golmokstar.ui.screens.Error
+import com.example.golmokstar.ui.screens.TravelPlan
+import com.example.golmokstar.ui.screens.TravelState
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
 
-enum class TravelState {
-    NONE, // 아무것도 아님
-    SETTING, // 설정 중
-    TRAVELING // 여행 중
-}
-
-data class TravelPlan(
-    val title: String, // 여행 제목 (필수)
-    val startDate: String, // 시작 날짜 (필수, 예: "2025/06/01")
-    val endDate: String, // 종료 날짜 (필수, 예: "2025/06/07")
-    val friends: List<String> = emptyList() // 선택 요소: 친구 리스트 (기본값: 빈 리스트)
-)
-
-enum class Error {
-    NONE, // 에러 없음
-    Title, // 제목 없음
-    Date, // 날짜 없음
-    Both, // 둘 다 없음
-}
 
 @Preview
 @Composable
@@ -232,6 +217,7 @@ fun TravelTitleField(
                 onChange(new)
             }
         },
+        enabled = currentState != TravelState.TRAVELING,
         textStyle = AppTypography.bodyMedium,
         modifier = Modifier
             .focusRequester(focusRequester) // 포커스를 감지하기 위한 FocusRequester 적용
@@ -239,7 +225,7 @@ fun TravelTitleField(
                 if (focusState.isFocused && currentState == TravelState.NONE) { // 포커스 된 경우 true
                     changeTravelState(TravelState.SETTING)
                 }
-            },
+            }.zIndex(1f),
         decorationBox = { innerTextField ->
             Row(
                 Modifier
@@ -284,17 +270,32 @@ fun TravelTitleField(
                     thickness = 1.dp,
                     color = TextDarkGray
                 )
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Date",
-                    tint = IconGray,
+                if(currentState != TravelState.TRAVELING) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Date",
+                        tint = IconGray,
 
-                    modifier = Modifier.clickable {
-                        if (currentState == TravelState.SETTING) {
-                            changeTravelState(TravelState.TRAVELING) // 상태가 SETTING일 때만 여행 시작 가능
+                        modifier = Modifier.clickable {
+                            if (currentState == TravelState.SETTING) {
+                                changeTravelState(TravelState.TRAVELING) // 상태가 SETTING일 때만 여행 시작 가능
+                            }
                         }
-                    }
-                )
+                    )
+                }
+                else {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.setting_icon),
+                        contentDescription = "Setting",
+                        tint = IconGray,
+
+                        modifier = Modifier.clickable {
+                            if (currentState == TravelState.TRAVELING) {
+                                changeTravelState(TravelState.SETTING) // 상태가 SETTING일 때만 여행 시작 가능
+                            }
+                        }
+                    )
+                }
             }
         }
     )

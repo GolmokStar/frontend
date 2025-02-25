@@ -1,4 +1,4 @@
-package com.example.golmokstar.ui.screens
+package com.example.golmokstar.repository
 
 import android.content.Context
 import androidx.datastore.core.DataStore
