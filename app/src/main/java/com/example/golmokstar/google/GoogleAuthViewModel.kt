@@ -14,6 +14,7 @@ import com.example.golmokstar.BuildConfig
 import com.example.golmokstar.network.dto.GoogleTokenRequest
 import com.example.golmokstar.network.dto.GoogleTokenResponse
 import com.example.golmokstar.network.dto.SignUpResponse
+import com.google.android.gms.auth.api.identity.BeginSignInResult
 import com.google.android.gms.auth.api.identity.SignInCredential
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -34,10 +35,15 @@ class GoogleAuthViewModel @Inject constructor(
     private val authService: AuthApiService = RetrofitClient.authApiService
     private val serverClientId: String = BuildConfig.GOOGLE_CLIENT_ID
 
+    //Log.e("serverClientId", serverClientId)
+
 
     // Google Login 요청 실행
-    suspend fun signIn(activity: Activity) =
-        signInClient.beginSignIn(GoogleAuthUtils.getSignInRequest(serverClientId)).await()
+    suspend fun signIn(activity: Activity): BeginSignInResult {
+        Log.e("serverClientId", serverClientId)
+        return signInClient.beginSignIn(GoogleAuthUtils.getSignInRequest(serverClientId)).await()
+    }
+
 
     // 로그인 결과 처리
     fun handleSignInResult(resultData: Intent?): String? {
@@ -50,27 +56,11 @@ class GoogleAuthViewModel @Inject constructor(
         }
     }
 
-//    suspend fun sendTokenToServer(idToken: String): Pair<Int, Any?> {
-//        return try {
-//            val response = authService.sendGoogleToken(GoogleTokenRequest(idToken))
-//
-//            val responseBody = response.body() // ✅ JSON이 아니라 객체로 받음
-//
-//            Log.d("GoogleAuthViewModel", "서버 응답 코드: ${response.code()}")
-//            Log.d("GoogleAuthViewModel", "서버 응답 본문: $responseBody")
-//
-//            response.code() to responseBody
-//        } catch (e: Exception) {
-//            Log.e("GoogleAuthViewModel", "서버 요청 실패: ${e.message}")
-//            500 to null
-//        }
-//    }
-
-
-
     suspend fun sendTokenToServer(idToken: String): Pair<Int, Any?> {
         return try {
+            Log.e("idToken", idToken)
             val response: Response<Any> = authService.sendGoogleToken(GoogleTokenRequest(idToken))
+            Log.e("response", response.toString())
 
             val responseBodyString = Gson().toJson(response.body()) // ✅ JSON 문자열로 변환
             Log.d("GoogleAuthViewModel", "서버 응답 JSON: $responseBodyString")
@@ -102,3 +92,4 @@ class GoogleAuthViewModel @Inject constructor(
 
 
 }
+
