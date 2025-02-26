@@ -112,11 +112,11 @@ fun NickNameTextField(nickname: String, onChange: (String) -> Unit) {
 
     BasicTextField(
         value = nickname,
-        onValueChange = {
-            if (it.matches(Regex("^[a-zA-Z가-힣]{0,8}$"))) {  // 영어, 한글만 허용
-                onChange(it)
-            }
-        }, keyboardOptions = KeyboardOptions.Default.copy(
+        onValueChange = { newValue ->
+            val filteredText = newValue.filter { it.isLetter() }.take(8) // 영어, 한글만 허용 + 8글자 제한
+            onChange(filteredText) // 필터링된 값만 적용
+        },
+        keyboardOptions = KeyboardOptions.Default.copy(
             imeAction = ImeAction.Done
         ),
         keyboardActions = KeyboardActions(
