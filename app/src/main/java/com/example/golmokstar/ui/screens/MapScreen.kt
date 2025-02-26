@@ -47,16 +47,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.example.golmokstar.R
+import com.example.golmokstar.network.MapViewModel
+import com.example.golmokstar.network.dto.MapPinFavoredRequest
+import com.example.golmokstar.network.dto.MapPinRecordRequest
+import com.example.golmokstar.network.dto.MapPinVisitRequest
 import com.example.golmokstar.ui.components.BlueBox
 import com.example.golmokstar.ui.components.BlueMarkerIcon
 import com.example.golmokstar.ui.components.CustomButton
@@ -121,6 +127,17 @@ fun MapScreen() {
     var selectedAddress by remember { mutableStateOf("") }
     var selectedTypes by remember { mutableStateOf("") }
     var selectedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
+    var selectedLat by remember { mutableStateOf(0.0) }
+    var selectedLng by remember { mutableStateOf(0.0) }
+    var selectedId by remember { mutableStateOf("") }
+
+    val mapViewModel: MapViewModel = viewModel()
+
+    // 박스 상태 및 색상 변경 함수
+    fun changeBoxState(newState: String, newColor: Color) {
+        visibleBoxState = newState
+        markerColor = newColor
+    }
 
     // Places API 초기화
     val apiKey = context.getString(R.string.google_API_key)
@@ -161,20 +178,25 @@ fun MapScreen() {
                         val result = response.getJSONObject("result")
                         val address = result.getString("formatted_address")
 
-                        // "대한민국"이 포함되어 있으면 제거
                         if (address.contains("대한민국")) {
                             selectedAddress = address.replace("대한민국", "").trim()
                         }
 
-                        // 장소의 유형 받아오기
-                        val types = result.getJSONArray("types")
-                        val placeTypes = mutableListOf<String>()
-                        for (i in 0 until types.length()) {
-                            placeTypes.add(types.getString(i))
-                        }
+                        val placeTypes = result.getJSONArray("types")
+                        val excludedTypes = setOf("point_of_interest", "establishment")
+
+                        selectedTypes = (0 until placeTypes.length())
+                            .map { placeTypes.getString(it) }
+                            .firstOrNull { it !in excludedTypes } ?: "unknown"
+
+                        // 위도, 경도 가져오기
+                        val location = result.getJSONObject("geometry").getJSONObject("location")
+                        val latitude = location.getDouble("lat")
+                        val longitude = location.getDouble("lng")
 
                         Log.d("POIPlace", "정확한 주소: $selectedAddress")
-                        Log.d("POIPlace", "장소 유형: $placeTypes")
+                        Log.d("POIPlace", "장소 유형: $selectedTypes")
+                        Log.d("POIPlace", "위도: $latitude, 경도: $longitude")
                     } else if (status == "NOT_FOUND") {
                         Log.e("POIPlace", "장소를 찾을 수 없습니다. 제공된 place_id가 올바른지 확인하세요.")
                     } else {
@@ -252,26 +274,34 @@ fun MapScreen() {
                 properties = properties,
                 uiSettings = uiSettings,
                 onPOIClick = { poi ->
-                    poi?.let {
+                    poi.let {
                         // POI 이름, 위치, 주소 가져오기
-                        val poiName = it.name?.lines()?.firstOrNull() ?: "이름 없음"
+                        val poiName = it.name.lines().firstOrNull() ?: "이름 없음"
                         val poiLatLng = it.latLng
+                        val poiLat = poiLatLng.latitude
+                        val poiLng = poiLatLng.longitude
                         val placeId = it.placeId // placeId를 가져옴
 
                         getPlaceDetails(context, placeId)
 
                         Log.d("POIPlace", "이름: $poiName")
-                        Log.d("POIPlace", "위치: ${poiLatLng?.latitude}, ${poiLatLng?.longitude}")
+                        Log.d("POIPlace", "place ID: $placeId")
+                        Log.d("POIPlace", "위치: $poiLat, $poiLng")
 
                         // 선택된 위치와 정보 설정
                         selectedMarkerLocation = poiLatLng
                         selectedName = poiName
                         selectedLocation = poiLatLng
+                        selectedLat = poiLat
+                        selectedLng = poiLng
+                        selectedId = placeId
                         markerColor = MainNavy
                         visibleBoxState = "Navy"
 
                         // 마커 색상 및 정보 박스 표시
                         showLocationBox = true
+                    } ?: run {
+                        Log.e("POIPlace", "POI가 null입니다.")
                     } ?: run {
                         Log.e("POIPlace", "POI가 null입니다.")
                         Toast.makeText(context, "POI 정보가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
@@ -313,7 +343,6 @@ fun MapScreen() {
                 Icon(painter = painterResource(R.drawable.my_location_icon), contentDescription = "내 위치 이동", Modifier.size(28.dp), tint = MainNavy)
             }
 
-
             // 선택된 위치 정보 박스
             AnimatedVisibility(
                 visible = selectedMarkerLocation != null,
@@ -327,69 +356,113 @@ fun MapScreen() {
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // RedBox 예시
-                    if ( visibleBoxState == "Red") {
-                        RedBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = selectedName,
-                            onBoxClick = { selectedMarkerLocation = null },
-                            onButtonClick = {
-                                // RedBox 버튼 클릭 시 YellowBox로 전환
-                                visibleBoxState = "Yellow"
-                                markerColor = MarkerYellow
-                            }
-                        )
-                    }
+                    when (visibleBoxState) {
+                        "Red" -> {
+                            RedBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onBoxClick = { selectedMarkerLocation = null },
+                                onButtonClick = {
 
-                    // YellowBox 예시
-                    if (visibleBoxState == "Yellow") {
-                        YellowBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = selectedName,
-                            onBoxClick = { selectedMarkerLocation = null },
-                            onButtonClick = {
-                                // YellowBox 버튼 클릭 시 BlueBox로 전환
-                                visibleBoxState = "Blue"
-                                markerColor = MarkerBlue
-                                showDialog = true
-                            },
-                            topLeftText = "입닫고맛잇는빵먹기"
-                        )
-                    }
+                                    val mapPinVisitRequest = MapPinVisitRequest(
+                                        tripId = "1",  // 예시로 tripId를 설정
+                                        googlePlaceId = selectedId,
+                                        placeName = selectedName,
+                                        latitude = selectedLat,
+                                        longitude = selectedLng,
+                                        deviceLatitude = currentLocation.latitude,
+                                        deviceLongitude = currentLocation.longitude,
+                                        pinType = selectedTypes
+                                    )
 
-                    // BlueBox 예시
-                    if (visibleBoxState == "Blue") {
-                        BlueBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = selectedName,
-                            onButtonClick = { },
-                            onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
-                            extraText = "입닫고맛잇는빵먹기"
-                        )
-                    }
+                                    mapViewModel.visitPin(mapPinVisitRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
 
-                    if(visibleBoxState == null || visibleBoxState == "Navy") {
-                        NavyBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = selectedName,
-                            onButtonClick = {
+                                    // RedBox 버튼 클릭 시 YellowBox로 전환
+                                    changeBoxState("Yellow", MarkerYellow)
+                                }
+                            )
+                        }
+                        "Yellow" -> {
+                            YellowBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onBoxClick = { selectedMarkerLocation = null },
+                                onButtonClick = {
 
-                                visibleBoxState = "Yellow"
-                                markerColor = MarkerYellow
-                                  },
-                            onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
-                            extraText = "",
-                            icon ={ NavyMarkerIcon(Modifier.size(15.dp)) },
-                            topLeftText = "",
-                            topLeft = { CustomButton {
-                                visibleBoxState = "Red"
-                                markerColor = MarkerRed }
-                            }
-                        )
+                                    val mapPinRecordRequest = MapPinRecordRequest(
+                                        pinId = "1",
+                                        pinType = selectedTypes
+                                    )
+
+                                    mapViewModel.recordPin(mapPinRecordRequest)
+
+                                    // YellowBox 버튼 클릭 시 BlueBox로 전환
+                                    changeBoxState("Blue", MarkerBlue)
+                                    showDialog = true
+                                },
+                                topLeftText = "입닫고맛잇는빵먹기"
+                            )
+                        }
+                        "Blue" -> {
+                            BlueBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onButtonClick = {},
+                                onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
+                                extraText = "입닫고맛잇는빵먹기"
+                            )
+                        }
+                        else -> {
+                            NavyBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onButtonClick = {
+
+                                    val mapPinVisitRequest = MapPinVisitRequest(
+                                        tripId = "1",
+                                        googlePlaceId = selectedId,
+                                        placeName = selectedName,
+                                        latitude = selectedLat,
+                                        longitude = selectedLng,
+                                        deviceLatitude = currentLocation.latitude,
+                                        deviceLongitude = currentLocation.longitude,
+                                        pinType = selectedTypes  // 찜하기로 설정
+                                    )
+
+                                    // ViewModel을 통해 API 호출
+                                    mapViewModel.visitPin(mapPinVisitRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
+
+                                    changeBoxState("Yellow", MarkerYellow)
+                                },
+                                onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
+                                extraText = "",
+                                icon = { NavyMarkerIcon(Modifier.size(15.dp)) },
+                                topLeftText = "",
+                                topLeft = {
+                                    CustomButton {
+                                        // MapPinFavoredRequest 객체 생성
+                                        val mapPinFavoredRequest = MapPinFavoredRequest(
+                                            tripId = "1",  // 예시로 tripId를 설정
+                                            googlePlaceId = selectedId,
+                                            placeName = selectedName,
+                                            latitude = selectedLat,   // 예시로 가정한 변수
+                                            longitude = selectedLng,  // 예시로 가정한 변수
+                                            pinType = selectedTypes  // 찜하기로 설정
+                                        )
+
+                                        // ViewModel을 통해 API 호출
+                                        mapViewModel.favoredPin(mapPinFavoredRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
+
+                                        // 상태 변경 (changeBoxState 함수)
+                                        changeBoxState("Red", MarkerRed)
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }

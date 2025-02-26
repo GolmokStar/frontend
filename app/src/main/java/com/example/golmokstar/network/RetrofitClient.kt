@@ -34,4 +34,17 @@ object RetrofitClient {
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
     }
+
+    val mapPinFavoredAPI: MapPinApiService by lazy {
+        retrofit.create(MapPinApiService::class.java)
+    }
+
+    val mapPinVisitAPI: MapPinApiService by lazy {
+        retrofit.create(MapPinApiService::class.java)
+    }
+
+    val mapPinRecordAPI: MapPinApiService by lazy {
+        retrofit.create(MapPinApiService::class.java)
+    }
+
 }
