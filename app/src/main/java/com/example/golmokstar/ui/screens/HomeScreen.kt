@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.golmokstar.R
 import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.network.dto.RecommendResponsed
 import com.example.golmokstar.ui.components.NetworkImage
 import com.example.golmokstar.ui.components.TravelTitleField
 import com.example.golmokstar.ui.theme.*
@@ -107,6 +108,7 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
     val currentTravel by travelViewModel.currentTravel.collectAsState()
     val currentError by travelViewModel.currentError.collectAsState()
     val recentHistory by travelViewModel.recentHistoryList.collectAsState()
+    val aiPlace by travelViewModel.aiPlaceList.collectAsState()
 
 
     var travelPlan by remember {
@@ -119,6 +121,7 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
     LaunchedEffect(Unit) {
         travelViewModel.getCurrentTravel()
         travelViewModel.getRecentHistory() // HomeScreen 진입 시 최근 기록 가져오기
+        travelViewModel.getAIPlace()
     }
 
     LaunchedEffect(currentTravel) {
@@ -193,7 +196,7 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
                 style = AppTypography.titleMedium,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
-        }, secondComponent = { RecommendPlace() }, padding = 0
+        }, secondComponent = { RecommendPlace(aiPlace) }, padding = 0
         )
 
 
@@ -372,20 +375,20 @@ fun RecentHistoryPlace(recentHistory: List<GetHistoryResponse>) {
 
 
 @Composable
-fun RecommendPlace() {
+fun RecommendPlace(places: List<RecommendResponsed>) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(20.dp),
         contentPadding = PaddingValues(horizontal = 20.dp)
 
     ) {
-        items(samplePlaces.toList()) { place ->
+        items(places) { place ->
             PlaceCard(place)
         }
     }
 }
 
 @Composable
-fun PlaceCard(place: Place) {
+fun PlaceCard(place: RecommendResponsed) {
     Card(
         modifier = Modifier
             .width(200.dp)
@@ -442,7 +445,7 @@ fun HistoryCard(history: GetHistoryResponse) {
 @Composable
 fun NameCard(data: Any) {
     when (data) {
-        is Place -> {
+        is RecommendResponsed -> {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -472,7 +475,7 @@ fun NameCard(data: Any) {
                             tint = TextLightGray
                         )
                         Text(
-                            text = data.address,
+                            text = data.latitude.toString(),
                             color = TextLightGray,
                             style = AppTypography.labelMedium
                         )

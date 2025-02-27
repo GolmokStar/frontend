@@ -6,6 +6,7 @@ import com.example.golmokstar.network.dto.CreateTravelResponse
 import com.example.golmokstar.network.dto.GetHistoryResponse
 import com.example.golmokstar.network.dto.GetTravelCurrentResponse
 import com.example.golmokstar.network.dto.GetTravelResponse
+import com.example.golmokstar.network.dto.RecommendResponsed
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -32,4 +33,7 @@ interface TravelApiService {
 
     @GET("record/history/travel/{tripId}")
     suspend fun getHistory(@Path("tripId") tripId: String) : Response<List<GetHistoryResponse>>
+
+    @GET("recommend")
+    suspend fun getRecommend() : Response<List<RecommendResponsed>>
 }

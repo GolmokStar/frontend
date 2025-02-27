@@ -12,6 +12,7 @@ import com.example.golmokstar.network.dto.GetTravelResponse
 import com.example.golmokstar.network.dto.CreateTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelResponse
 import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.network.dto.RecommendResponsed
 import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.utils.formatToDate
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,6 +72,9 @@ class TravelViewModel @Inject constructor(
     private val _currentTripList = MutableStateFlow<TripsDropdownResponse>(TripsDropdownResponse(0, "선택해주세요"))
     val currentTripList: StateFlow<TripsDropdownResponse> = _currentTripList
 
+    private val _aiPlaceList = MutableStateFlow<List<RecommendResponsed>>(emptyList())
+    val aiPlaceList: StateFlow<List<RecommendResponsed>> = _aiPlaceList
+
 
     fun updateSelectedTrip(newItem: TripsDropdownResponse) {
         _currentTripList.value = newItem
@@ -98,6 +102,27 @@ class TravelViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e("TravelViewModel", "서버 요청 실패: ${e.message}")
             _travelState.value = TravelState.NONE
+        }
+    }
+
+
+    fun getAIPlace() {
+        viewModelScope.launch {
+            try {
+                val response = travelApiService.getRecommend()
+                if (response.isSuccessful) {
+                    Log.e("AIresponse", response.body().toString())
+                    response.body()?.let { placeResponse ->
+                        _aiPlaceList.value =  placeResponse  // ✅ 리스트를 직접 저장
+                    } ?: run {
+                        _aiPlaceList.value = emptyList()
+                    }
+                } else {
+                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("네트워크 요청 실패", " ${e.message}")
+            }
         }
     }
 
