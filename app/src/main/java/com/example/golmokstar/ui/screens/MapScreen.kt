@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -133,6 +135,11 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
     var selectedLat by remember { mutableStateOf(0.0) }
     var selectedLng by remember { mutableStateOf(0.0) }
     var selectedId by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.dropdownApi()
+    }
+
 
     // 박스 상태 및 색상 변경 함수
     fun changeBoxState(newState: String, newColor: Color) {
@@ -444,6 +451,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                             tripId = 19,  // 예시로 tripId를 설정
                                             googlePlaceId = selectedId,
                                             placeName = selectedName,
+                                            placeType = selectedTypes,
                                             latitude = selectedLat,   // 예시로 가정한 변수
                                             longitude = selectedLng,  // 예시로 가정한 변수
                                             pinType = "FAVORED"  // 찜하기로 설정
@@ -484,7 +492,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                     viewModel = viewModel(), // ViewModel 전달
                     modifier = Modifier
                         .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
-                        .padding(16.dp) // 드롭다운 위치 조정 (선택 사항)
+
                 )
             }
         }
@@ -494,19 +502,23 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
-    val dropdownItems = listOf("전체", "옵션 1", "옵션 2") // 드롭다운 항목 리스트
-    var expanded by remember { mutableStateOf(false) } // 드롭다운 열기/닫기 상태 관리
-    var selectedItem by remember { mutableStateOf("전체") } // 선택된 항목 관리, 기본값을 "전체"로 설정
+    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
+    var expanded by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = it }, // 드롭다운 상태 변경
-        modifier = modifier
+        onExpandedChange = { expanded = it },
+        modifier = Modifier
+            .padding(16.dp)
+            .width(180.dp)
+            .height(50.dp)
+            .background(White)
     ) {
         OutlinedTextField(
-            value = selectedItem, // selectedItem을 String으로 설정
-            onValueChange = { selectedItem = it }, // 선택된 항목 업데이트
-            readOnly = true, // 읽기 전용
+            value = selectedItem,
+            onValueChange = {},
+            readOnly = true,
             shape = RoundedCornerShape(12.dp),
             trailingIcon = {
                 IconButton(onClick = { expanded = !expanded }) {
@@ -517,35 +529,36 @@ fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
                     )
                 }
             },
-            interactionSource = remember { MutableInteractionSource() } // interactionSource 설정
+            modifier = Modifier.menuAnchor(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = IconGray,  // 포커스가 없는 상태일 때 외곽선 색상
+                focusedBorderColor = IconGray,    // 포커스가 있는 상태일 때 외곽선 색상
+                focusedLabelColor = TextDarkGray,
+                unfocusedLabelColor = TextDarkGray
+            )
+
+
         )
 
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(White)
+
         ) {
-//            dropdownItems.forEach { item ->
-//                DropdownMenuItem(
-//                    onClick = {
-//                        selectedItem = item // 선택된 항목 업데이트
-//                        expanded = false // 드롭다운 닫기
-//                        Log.d("Dropdown", "Selected item: $item")
-//
-//                        // "전체" 항목이 클릭되었을 때 mapPinApi 호출
-//                        if (item == "전체") {
-//                            viewModel.mapPinApi() // 여기에 원하는 API 호출
-//                        }
-//                    },
-//                    interactionSource = remember { MutableInteractionSource() } // interactionSource 전달
-//                ) {
-//                    // Text에서 'item'을 text로 전달
-//                    Text(text = item)
-//                }
-//            }
+            // API에서 받아온 데이터 표시
+            dropdownItems.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
+                    onClick = {
+                        selectedItem = item.title
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }
-
 
 // 위치 목록 UI 컴포넌트
 @Composable
