@@ -1,7 +1,7 @@
 package com.example.golmokstar.network.dto
 
 data class MapPinFavoredRequest(
-    val tripId: String,
+    val tripId: Int,
     val googlePlaceId: String,
     val placeName: String,
     val latitude : Double,

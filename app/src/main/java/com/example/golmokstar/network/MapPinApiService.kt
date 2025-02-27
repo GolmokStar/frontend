@@ -6,11 +6,13 @@ import com.example.golmokstar.network.dto.MapPinRecordRequest
 import com.example.golmokstar.network.dto.MapPinResponse
 import com.example.golmokstar.network.dto.MapPinVisitRequest
 import com.example.golmokstar.network.dto.MapPinVisitResponse
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface MapPinApiService {
 
@@ -25,4 +27,8 @@ interface MapPinApiService {
 
     @GET("/mapPin")
     suspend fun mapPin(): Response<List<MapPinResponse>>
+
+    @GET("/trips/dropdown")
+    suspend fun dropdownPin(): Response<List<TripsDropdownResponse>>
+
 }
