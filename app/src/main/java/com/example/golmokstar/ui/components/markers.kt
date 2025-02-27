@@ -28,7 +28,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
 
 // ✅ 색상 변경 가능 벡터 → 비트맵 변환 함수 (구글맵마커용)
-fun vectorToBitmap(context: Context, @DrawableRes vectorResId: Int, color: Int? = null, width: Int = 63, height: Int = 73): BitmapDescriptor {
+fun vectorToBitmap(context: Context, @DrawableRes vectorResId: Int, color: Int? = null, width: Int = 68, height: Int = 78): BitmapDescriptor {
     val drawable = ContextCompat.getDrawable(context, vectorResId) ?: return BitmapDescriptorFactory.defaultMarker()
 
     // 색상 필터 적용 (색상이 null이 아니면 적용)

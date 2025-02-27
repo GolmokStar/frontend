@@ -3,9 +3,10 @@ package com.example.golmokstar.ui.screens
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Geocoder
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -40,20 +45,30 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.example.golmokstar.R
-import com.example.golmokstar.repository.DataStoreModule
+import com.example.golmokstar.network.dto.MapPinFavoredRequest
+import com.example.golmokstar.network.dto.MapPinRecordRequest
+import com.example.golmokstar.network.dto.MapPinVisitRequest
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.ui.components.BlueBox
 import com.example.golmokstar.ui.components.BlueMarkerIcon
 import com.example.golmokstar.ui.components.CustomButton
@@ -76,6 +91,7 @@ import com.example.golmokstar.ui.theme.MarkerRed
 import com.example.golmokstar.ui.theme.MarkerYellow
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
+import com.example.golmokstar.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -83,6 +99,8 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
@@ -91,21 +109,17 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
-fun MapScreen() {
+fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
+    TripDropdownScreen(viewModel = viewModel)
+
     val context = LocalContext.current
-    val dataStore = DataStoreModule(context)
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     val activity = context as? Activity
-
-    var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("전체") }
-    val items = listOf("옵션 1", "옵션 2", "옵션 3")
 
     var currentLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var savedLatitude by remember { mutableDoubleStateOf(0.0) }
     var savedLongitude by remember { mutableDoubleStateOf(0.0) }
-    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
-    var selectedAddress by remember { mutableStateOf("") }
+
     var showLocationBox by remember { mutableStateOf(false) } // 박스 열기/닫기 상태 추가
     var permissionGranted by remember { mutableStateOf(false) } // 권한이 허용되었는지 여부
     var visibleBoxState by remember { mutableStateOf<String?>(null) }
@@ -113,20 +127,92 @@ fun MapScreen() {
 
     var showDialog by remember { mutableStateOf(false) }
 
+    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
+    var selectedName by remember { mutableStateOf("") }
+    var selectedAddress by remember { mutableStateOf("") }
+    var selectedTypes by remember { mutableStateOf("") }
+    var selectedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
+    var selectedLat by remember { mutableStateOf(0.0) }
+    var selectedLng by remember { mutableStateOf(0.0) }
+    var selectedId by remember { mutableStateOf("") }
 
-    fun getAddressFromLatLng(latLng: LatLng) {
-        val geocoder = Geocoder(context)
+    LaunchedEffect(Unit) {
+        viewModel.dropdownApi()
+    }
+
+
+    // 박스 상태 및 색상 변경 함수
+    fun changeBoxState(newState: String, newColor: Color) {
+        visibleBoxState = newState
+        markerColor = newColor
+    }
+
+    // Places API 초기화
+    val apiKey = context.getString(R.string.google_API_key)
+    if (apiKey.isEmpty() || apiKey == "DEFAULT_API_KEY") {
+        Log.e("Places test", "API 키가 없습니다.")
+        return
+    }
+
+    var placesClient: PlacesClient? by remember { mutableStateOf(null) }
+    var isPlacesInitialized by remember { mutableStateOf(false) }  // Places 초기화 상태를 추적
+
+    // Places 초기화
+    LaunchedEffect(apiKey) {
         try {
-            val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            // addresses가 null이 아니고, 비어있지 않은 경우에만 처리
-            if (!addresses.isNullOrEmpty()) {
-                selectedAddress = addresses[0]?.getAddressLine(0) ?: "주소를 가져올 수 없습니다."
-            } else {
-                selectedAddress = "주소를 가져올 수 없습니다."
-            }
+            Places.initialize(context, apiKey)
+            placesClient = Places.createClient(context)
+            isPlacesInitialized = true
         } catch (e: Exception) {
-            selectedAddress = "주소를 가져오는 데 실패했습니다."
+            Log.e("Places test", "PlacesClient 초기화 실패: ${e.message}")
+            isPlacesInitialized = false
         }
+    }
+
+    fun getPlaceDetails(context: Context, placeId: String) {
+        val apiKey = context.getString(R.string.google_API_key) // API 키 가져오기
+        val url = "https://maps.googleapis.com/maps/api/place/details/json" +
+                "?place_id=$placeId" +
+                "&language=ko" +
+                "&key=$apiKey"
+
+        val request = JsonObjectRequest(
+            Request.Method.GET, url, null,
+            { response ->
+                try {
+                    // API 응답 상태 확인
+                    val status = response.getString("status")
+                    if (status == "OK") {
+                        val result = response.getJSONObject("result")
+                        val address = result.getString("formatted_address")
+
+                        if (address.contains("대한민국")) {
+                            selectedAddress = address.replace("대한민국", "").trim()
+                        }
+
+                        val placeTypes = result.getJSONArray("types")
+                        val excludedTypes = setOf("point_of_interest", "establishment")
+
+                        selectedTypes = (0 until placeTypes.length())
+                            .map { placeTypes.getString(it) }
+                            .firstOrNull { it !in excludedTypes } ?: "unknown"
+
+                        Log.d("POIPlace", "정확한 주소: $selectedAddress")
+                        Log.d("POIPlace", "장소 유형: $selectedTypes")
+                    } else if (status == "NOT_FOUND") {
+                        Log.e("POIPlace", "장소를 찾을 수 없습니다. 제공된 place_id가 올바른지 확인하세요.")
+                    } else {
+                        Log.e("POIPlace", "API 요청 실패, 상태: $status")
+                    }
+                } catch (e: Exception) {
+                    Log.e("POIPlace", "JSON 파싱 오류", e)
+                }
+            },
+            { error ->
+                Log.e("POIPlace", "API 요청 오류", error)
+            })
+
+        Volley.newRequestQueue(context).add(request)
     }
 
     // 실시간 위치 업데이트를 위한 LocationCallback 설정
@@ -147,33 +233,34 @@ fun MapScreen() {
     }
 
     // 권한 체크 후 실시간 위치 가져오기
-
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission())
-    { isGranted -> permissionGranted = isGranted // 권한 허용 여부 상태 업데이트
-        // 권한이 허용되었을 때 위치 업데이트 요청
-        if (isGranted) { fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper()) }
-        else { Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show() }
+    { isGranted ->
+        permissionGranted = isGranted
+        if (isGranted) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        } else {
+            Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    // 권한 체크 후 실시간 위치 가져오기
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             permissionGranted = true
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-        } else { activity?.let { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) } }
-        dataStore.getLatitude.collect { savedLatitude = it }
-        dataStore.getLongitude.collect { savedLongitude = it }
+        } else {
+            activity?.let { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+        }
     }
 
-    // 카메라 위치 설정
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(currentLocation, 17f)
+        position = CameraPosition.fromLatLngZoom(currentLocation, 18f)
     }
 
-    // 위치가 업데이트 될 때마다 카메라 이동
     LaunchedEffect(currentLocation) {
         if (currentLocation.latitude != 0.0 && currentLocation.longitude != 0.0) {
-            cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
+            if (cameraPositionState.position.target != currentLocation) {
+                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 18f))
+            }
         }
     }
 
@@ -188,14 +275,39 @@ fun MapScreen() {
                 cameraPositionState = cameraPositionState,
                 properties = properties,
                 uiSettings = uiSettings,
-                onMapClick = { latLng ->
-                    // 지도 클릭 시: 마커 위치와 박스를 초기화합니다.
-                    selectedMarkerLocation = latLng
-                    markerColor = MainNavy // 마커 색상도 빨간색으로 초기화
-                    visibleBoxState = "Navy" // 박스를 빨간 박스로 초기화
-                    showLocationBox = true // 위치 박스 보여주기
-                    getAddressFromLatLng(latLng)
+                onPOIClick = { poi ->
+                    poi.let {
+                        // POI 이름, 위치, 주소 가져오기
+                        val poiName = it.name.lines().firstOrNull() ?: "이름 없음"
+                        val poiLatLng = it.latLng
+                        val poiLat = poiLatLng.latitude
+                        val poiLng = poiLatLng.longitude
+                        val placeId = it.placeId // placeId를 가져옴
 
+                        getPlaceDetails(context, placeId)
+
+                        Log.d("POIPlace", "이름: $poiName")
+                        Log.d("POIPlace", "place ID: $placeId")
+                        Log.d("POIPlace", "위치: $poiLat, $poiLng")
+
+                        // 선택된 위치와 정보 설정
+                        selectedMarkerLocation = poiLatLng
+                        selectedName = poiName
+                        selectedLocation = poiLatLng
+                        selectedLat = poiLat
+                        selectedLng = poiLng
+                        selectedId = placeId
+                        markerColor = MainNavy
+                        visibleBoxState = "Navy"
+
+                        // 마커 색상 및 정보 박스 표시
+                        showLocationBox = true
+                    } ?: run {
+                        Log.e("POIPlace", "POI가 null입니다.")
+                    } ?: run {
+                        Log.e("POIPlace", "POI가 null입니다.")
+                        Toast.makeText(context, "POI 정보가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             ) {
                 // 저장된 위도, 경도가 있으면 마커 표시
@@ -203,11 +315,11 @@ fun MapScreen() {
                     Marker(
                         state = MarkerState(position = LatLng(savedLatitude, savedLongitude)),
                         title = "찜한 위치",
-                        icon = redMarkerPin(context) // 초기 마커는 빨간색
+                        icon = navyMarkerPin(context) //
                     )
                 }
 
-                // 지도 클릭 후 추가된 마커
+                // 선택된 마커 위치에 핀 표시
                 selectedMarkerLocation?.let {
                     Marker(
                         state = MarkerState(position = it),
@@ -217,7 +329,7 @@ fun MapScreen() {
                             MarkerYellow -> yellowMarkerPin(context)
                             MarkerBlue -> blueMarkerPin(context)
                             MainNavy -> navyMarkerPin(context)
-                            else -> redMarkerPin(context) // 기본 색상으로 처리
+                            else -> navyMarkerPin(context)
                         }
                     )
                 }
@@ -225,13 +337,13 @@ fun MapScreen() {
 
             // 내 위치 버튼 → 오른쪽 하단에 배치
             FloatingActionButton(onClick = {
-                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 17f))
+                // 내 위치 버튼을 눌렀을 때만 카메라 이동
+                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(currentLocation, 18f))
             }, modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp), containerColor = White) {
-                Icon(painter = painterResource(R.drawable.my_location_icon),  contentDescription = "내 위치 이동", Modifier.size(20.dp), tint = MainNavy  )
+                Icon(painter = painterResource(R.drawable.my_location_icon), contentDescription = "내 위치 이동", Modifier.size(28.dp), tint = MainNavy)
             }
-
 
             // 선택된 위치 정보 박스
             AnimatedVisibility(
@@ -246,69 +358,114 @@ fun MapScreen() {
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // RedBox 예시
-                    if ( visibleBoxState == "Red") {
-                        RedBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = "성심당",
-                            onBoxClick = { selectedMarkerLocation = null },
-                            onButtonClick = {
-                                // RedBox 버튼 클릭 시 YellowBox로 전환
-                                visibleBoxState = "Yellow"
-                                markerColor = MarkerYellow
-                            }
-                        )
-                    }
+                    when (visibleBoxState) {
+                        "Red" -> {
+                            RedBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onBoxClick = { selectedMarkerLocation = null },
+                                onButtonClick = {
 
-                    // YellowBox 예시
-                    if (visibleBoxState == "Yellow") {
-                        YellowBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = "성심당",
-                            onBoxClick = { selectedMarkerLocation = null },
-                            onButtonClick = {
-                                // YellowBox 버튼 클릭 시 BlueBox로 전환
-                                visibleBoxState = "Blue"
-                                markerColor = MarkerBlue
-                                showDialog = true
-                            },
-                            topLeftText = "입닫고맛잇는빵먹기"
-                        )
-                    }
+                                    val mapPinVisitRequest = MapPinVisitRequest(
+                                        tripId = 19,  // 예시로 tripId를 설정
+                                        googlePlaceId = selectedId,
+                                        placeName = selectedName,
+                                        latitude = selectedLat,
+                                        longitude = selectedLng,
+                                        deviceLatitude = currentLocation.latitude,
+                                        deviceLongitude = currentLocation.longitude,
+                                        pinType = "VISITED_PENDING"
+                                    )
 
-                    // BlueBox 예시
-                    if (visibleBoxState == "Blue") {
-                        BlueBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = "성심당",
-                            onButtonClick = { },
-                            onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
-                            extraText = "입닫고맛잇는빵먹기"
-                        )
-                    }
+                                    viewModel.visitApi(mapPinVisitRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
 
-                    if(visibleBoxState == null || visibleBoxState == "Navy") {
-                        NavyBox(
-                            address = selectedAddress,
-                            date = "2025-02-25",
-                            name = "성심당",
-                            onButtonClick = {
+                                    // RedBox 버튼 클릭 시 YellowBox로 전환
+                                    changeBoxState("Yellow", MarkerYellow)
+                                }
+                            )
+                        }
+                        "Yellow" -> {
+                            YellowBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onBoxClick = { selectedMarkerLocation = null },
+                                onButtonClick = {
 
-                                visibleBoxState = "Yellow"
-                                markerColor = MarkerYellow
-                                  },
-                            onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
-                            extraText = "",
-                            icon ={ NavyMarkerIcon(Modifier.size(15.dp)) },
-                            topLeftText = "",
-                            topLeft = { CustomButton {
-                                visibleBoxState = "Red"
-                                markerColor = MarkerRed }
-                            }
-                        )
+                                    val mapPinRecordRequest = MapPinRecordRequest(
+                                        pinId = 1,
+                                        pinType = "RECORDED"
+                                    )
+
+                                    viewModel.recordApi(mapPinRecordRequest)
+
+                                    // YellowBox 버튼 클릭 시 BlueBox로 전환
+                                    changeBoxState("Blue", MarkerBlue)
+                                    showDialog = true
+                                },
+                                topLeftText = "입닫고맛잇는빵먹기"
+                            )
+                        }
+                        "Blue" -> {
+                            BlueBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onButtonClick = {},
+                                onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
+                                extraText = "입닫고맛잇는빵먹기"
+                            )
+                        }
+                        else -> {
+                            NavyBox(
+                                address = selectedAddress,
+                                date = "2025-02-25",
+                                name = selectedName,
+                                onButtonClick = {
+
+                                    val mapPinVisitRequest = MapPinVisitRequest(
+                                        tripId = 19,
+                                        googlePlaceId = selectedId,
+                                        placeName = selectedName,
+                                        latitude = selectedLat,
+                                        longitude = selectedLng,
+                                        deviceLatitude = currentLocation.latitude,
+                                        deviceLongitude = currentLocation.longitude,
+                                        pinType = "VISITED_PENDING"  // 찜하기로 설정
+                                    )
+
+                                    // ViewModel을 통해 API 호출
+                                    viewModel.visitApi(mapPinVisitRequest)
+
+                                    changeBoxState("Yellow", MarkerYellow)
+                                },
+                                onBoxClick = { selectedMarkerLocation = null }, // 클릭 시 처리
+                                extraText = "",
+                                icon = { NavyMarkerIcon(Modifier.size(15.dp)) },
+                                topLeftText = "",
+                                topLeft = {
+                                    CustomButton {
+                                        // MapPinFavoredRequest 객체 생성
+                                        val mapPinFavoredRequest = MapPinFavoredRequest(
+                                            tripId = 19,  // 예시로 tripId를 설정
+                                            googlePlaceId = selectedId,
+                                            placeName = selectedName,
+                                            placeType = selectedTypes,
+                                            latitude = selectedLat,   // 예시로 가정한 변수
+                                            longitude = selectedLng,  // 예시로 가정한 변수
+                                            pinType = "FAVORED"  // 찜하기로 설정
+                                        )
+
+                                        // ViewModel을 통해 API 호출
+                                        viewModel.favoredApi(mapPinFavoredRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
+
+                                        // 상태 변경 (changeBoxState 함수)
+                                        changeBoxState("Red", MarkerRed)
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -329,17 +486,13 @@ fun MapScreen() {
                 LocationItemList()
             }
 
-
             // 상단 왼쪽에 드롭다운 배치
             Box(modifier = Modifier.fillMaxSize()) {
-                // 드롭다운 컴포넌트 사용
-                DropdownMenuWithIcon(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                    selectedItem = selectedItem,
-                    onItemSelected = { selectedItem = it },
-                    items = items,
-                    modifier = Modifier.align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
+                TripDropdownScreen(
+                    viewModel = viewModel(), // ViewModel 전달
+                    modifier = Modifier
+                        .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
+
                 )
             }
         }
@@ -348,72 +501,64 @@ fun MapScreen() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropdownMenuWithIcon(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    selectedItem: String,
-    onItemSelected: (String) -> Unit,
-    items: List<String>,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
-            modifier = Modifier
-                .padding(16.dp)
-                .width(180.dp)
-                .height(50.dp)
-        ) {
-            OutlinedTextField(
-                value = selectedItem,
-                onValueChange = {}, // 값 변경 불가능하게 설정
-                readOnly = true, // 읽기 전용으로 설정
-                shape = RoundedCornerShape(12.dp),
-                trailingIcon = {
-                    // 아이콘 클릭 시 드롭다운 열리거나 닫히게 함
-                    IconButton(onClick = { onExpandedChange(!expanded) }) {
-                        Icon(
-                            imageVector =
-                                if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
-                                else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
-                            contentDescription = "드롭다운 열기",
-                            tint = IconGray
-                        )
-                    }
-                },
-                modifier = Modifier.menuAnchor(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = White,
-                    focusedBorderColor = IconGray,
-                    unfocusedBorderColor = IconGray,
-                    focusedTextColor = TextDarkGray,
-                    unfocusedTextColor = TextDarkGray
-                ),
-                textStyle = AppTypography.bodyMedium
-            )
+fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
+    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
+    var expanded by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
 
-            // 드롭다운 메뉴
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { onExpandedChange(false) }, // 드롭다운 외부 클릭 시 닫히게 함
-                modifier = Modifier.background(White)
-            ) {
-                items.forEach { item ->
-                    DropdownMenuItem(
-                        text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
-                        onClick = {
-                            onItemSelected(item) // 아이템 클릭 시 선택된 아이템 설정
-                            onExpandedChange(false) // 드롭다운 닫기
-                        }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = Modifier
+            .padding(16.dp)
+            .width(180.dp)
+            .height(50.dp)
+            .background(White)
+    ) {
+        OutlinedTextField(
+            value = selectedItem,
+            onValueChange = {},
+            readOnly = true,
+            shape = RoundedCornerShape(12.dp),
+            trailingIcon = {
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
+                        else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
+                        contentDescription = "Toggle dropdown"
                     )
                 }
+            },
+            modifier = Modifier.menuAnchor(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = IconGray,  // 포커스가 없는 상태일 때 외곽선 색상
+                focusedBorderColor = IconGray,    // 포커스가 있는 상태일 때 외곽선 색상
+                focusedLabelColor = TextDarkGray,
+                unfocusedLabelColor = TextDarkGray
+            )
+
+
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(White)
+
+        ) {
+            // API에서 받아온 데이터 표시
+            dropdownItems.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
+                    onClick = {
+                        selectedItem = item.title
+                        expanded = false
+                    }
+                )
             }
         }
     }
 }
-
-
 
 // 위치 목록 UI 컴포넌트
 @Composable
@@ -446,5 +591,3 @@ fun LocationItem(text: String, icon: @Composable () -> Unit) {
         Text(text = text, color = White, style = AppTypography.bodyMedium)
     }
 }
-
-

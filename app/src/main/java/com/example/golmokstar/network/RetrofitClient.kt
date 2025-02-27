@@ -86,4 +86,11 @@ object NetworkModule {
     fun provideTravelApiService(retrofit: Retrofit): TravelApiService {
         return retrofit.create(TravelApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideMapPinAPI(retrofit: Retrofit): MapPinApiService {
+        return retrofit.create(MapPinApiService::class.java)
+    }
+
 }

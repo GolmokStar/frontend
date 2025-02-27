@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GolmokStar</string>
+    <string name="google_API_key" templateMergeStrategy="preserve" translatable="false" >AIzaSyCWUxonM9XPuHQui8mH1oo1c5RZCvbguJ8</string>
 </resources>
