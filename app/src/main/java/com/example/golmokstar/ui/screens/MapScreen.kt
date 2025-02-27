@@ -60,6 +60,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
@@ -92,6 +93,7 @@ import com.example.golmokstar.ui.theme.MarkerYellow
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
 import com.example.golmokstar.viewmodel.MapViewModel
+import com.example.golmokstar.viewmodel.TravelViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -166,6 +168,24 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
         } catch (e: Exception) {
             Log.e("Places test", "PlacesClient 초기화 실패: ${e.message}")
             isPlacesInitialized = false
+        }
+    }
+
+    // TravelViewModel initialization
+    val travelViewModel: TravelViewModel = hiltViewModel()  // Initialize the travelViewModel here
+
+// 위도와 경도 정의
+    val latitude = selectedLat  // 예시 위도
+    val longitude = selectedLng  // 예시 경도
+
+// 여행 뷰모델을 사용하여 좌표로부터 장소 이미지를 가져옴
+    travelViewModel.getPlaceImageByCoordinates(latitude, longitude) { imageUrl, placeId ->
+        if (imageUrl != null) {
+            Log.d("ImageURL", "이미지 URL: $imageUrl")  // 이미지 URL 로그 출력
+            Log.d("PlaceInfo", "장소 ID: $placeId")  // 장소 ID 로그 출력
+        } else {
+            Log.e("ImageURL", "이미지를 가져올 수 없습니다.")
+            Log.e("PlaceInfo", "장소 ID: $placeId")  // 장소 ID 로그 출력
         }
     }
 
