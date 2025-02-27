@@ -11,7 +11,6 @@ import com.example.golmokstar.network.MapPinApiService
 import com.example.golmokstar.network.dto.ApiResponse
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinRecordRequest
-import com.example.golmokstar.network.dto.MapPinResponse
 import com.example.golmokstar.network.dto.MapPinVisitRequest
 import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.google.gson.Gson
@@ -30,9 +29,6 @@ class MapViewModel @Inject constructor(
     // API 호출 결과를 저장할 LiveData
     private val _placeRegisterResult = MutableLiveData<String>()
     val placeRegisterResult: LiveData<String> get() = _placeRegisterResult
-
-    private val _mapPins = MutableLiveData<List<MapPinResponse>>()
-    val mapPins: LiveData<List<MapPinResponse>> get() = _mapPins
 
     private val _dropdownItems = MutableLiveData<List<TripsDropdownResponse>>()
     val dropdownItems: LiveData<List<TripsDropdownResponse>> get() = _dropdownItems
@@ -102,50 +98,6 @@ class MapViewModel @Inject constructor(
                 successMessage = "기록하기 요청",
                 errorMessagePrefix = "기록하기 요청"
             )
-        }
-    }
-
-    fun mapPinApi() {
-        viewModelScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    mapPinApiService.mapPin()
-                }
-
-                if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    Log.d("API_CALL", "map API 응답: ${gson.toJson(responseBody)}") // 응답 데이터 로깅
-
-                    _mapPins.postValue(response.body() ?: emptyList())
-                } else {
-                    val errorMessage = response.errorBody()?.string() ?: "알 수 없는 오류"
-                    Log.d("API_CALL", "드롭다운 API 실패: $errorMessage")
-                    _placeRegisterResult.postValue("여행 목록 조회 실패: $errorMessage")
-
-                }
-            } catch (e: Exception) {
-                Log.e("API_CALL", "여행 목록 조회 오류: ${e.message}", e)
-                _placeRegisterResult.postValue("네트워크 오류: ${e.message}")
-            }
-        }
-    }
-
-    // 특정 tripId에 해당하는 여행 데이터 호출
-    fun mapPinTripIdApi(tripId: Int) {
-        viewModelScope.launch {
-            try {
-                val response = mapPinApiService.mapPintripId(tripId)
-                if (response.isSuccessful) {
-                    val mapPin = response.body()
-                    if (mapPin != null) {
-                        _mapPins.postValue(listOf(mapPin)) // 하나의 여행 데이터를 리스트 형태로
-                    }
-                } else {
-                    _placeRegisterResult.postValue("해당 여행 데이터를 가져오지 못했습니다.")
-                }
-            } catch (e: Exception) {
-                _placeRegisterResult.postValue("네트워크 오류: ${e.message}")
-            }
         }
     }
 
