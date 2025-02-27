@@ -47,4 +47,8 @@ object RetrofitClient {
         retrofit.create(MapPinApiService::class.java)
     }
 
+    val mapPinApi: MapPinApiService by lazy {
+        retrofit.create(MapPinApiService::class.java)
+    }
+
 }

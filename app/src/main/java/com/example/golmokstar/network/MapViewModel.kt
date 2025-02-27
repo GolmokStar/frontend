@@ -5,11 +5,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.golmokstar.network.RetrofitClient.mapPinApi
 import com.example.golmokstar.network.RetrofitClient.mapPinFavoredAPI
 import com.example.golmokstar.network.RetrofitClient.mapPinRecordAPI
 import com.example.golmokstar.network.RetrofitClient.mapPinVisitAPI
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinRecordRequest
+import com.example.golmokstar.network.dto.MapPinResponse
 import com.example.golmokstar.network.dto.MapPinVisitRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +24,10 @@ class MapViewModel : ViewModel() {
     // API 호출 결과를 저장할 LiveData
     private val _placeRegisterResult = MutableLiveData<String>()
     val placeRegisterResult: LiveData<String> get() = _placeRegisterResult
+
+    private val _mapPins = MutableLiveData<List<MapPinResponse>>()  // 장소 리스트 저장
+    val mapPins: LiveData<List<MapPinResponse>> get() = _mapPins  // 외부에서 관찰 가능
+
 
     private val gson = Gson()  // Gson 인스턴스
 
@@ -85,4 +91,26 @@ class MapViewModel : ViewModel() {
             )
         }
     }
+
+    // 장소 조회(전체) API 호출
+    fun mapPin() {
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) { mapPinApi.mapPin() }
+
+                if (response.isSuccessful) {
+                    val mapPinList = response.body() ?: emptyList()  // null인 경우 빈 리스트로 대체
+                    _mapPins.postValue(mapPinList)  // 장소 목록을 LiveData에 저장
+                    Log.d("API_CALL", "장소 조회 성공!")
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "알 수 없는 오류"
+                    Log.d("API_CALL", "장소 조회 실패: $errorMessage")
+                }
+            } catch (e: Exception) {
+                // 예외 처리
+                Log.e("API_CALL", "장소 조회 네트워크 오류: ${e.message}", e)
+            }
+        }
+    }
+
 }

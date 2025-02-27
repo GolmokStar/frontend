@@ -3,10 +3,12 @@ package com.example.golmokstar.network
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinFavoredResponse
 import com.example.golmokstar.network.dto.MapPinRecordRequest
+import com.example.golmokstar.network.dto.MapPinResponse
 import com.example.golmokstar.network.dto.MapPinVisitRequest
 import com.example.golmokstar.network.dto.MapPinVisitResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 
@@ -21,4 +23,6 @@ interface MapPinApiService {
     @PUT("/mapPin/record")
     suspend fun recordPin(@Body mapPinRecordRequest: MapPinRecordRequest): Response<MapPinVisitResponse>
 
+    @GET("/mapPin")
+    suspend fun mapPin(): Response<List<MapPinResponse>>
 }

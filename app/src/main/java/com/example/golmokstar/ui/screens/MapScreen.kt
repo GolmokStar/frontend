@@ -189,14 +189,8 @@ fun MapScreen() {
                             .map { placeTypes.getString(it) }
                             .firstOrNull { it !in excludedTypes } ?: "unknown"
 
-                        // 위도, 경도 가져오기
-                        val location = result.getJSONObject("geometry").getJSONObject("location")
-                        val latitude = location.getDouble("lat")
-                        val longitude = location.getDouble("lng")
-
                         Log.d("POIPlace", "정확한 주소: $selectedAddress")
                         Log.d("POIPlace", "장소 유형: $selectedTypes")
-                        Log.d("POIPlace", "위도: $latitude, 경도: $longitude")
                     } else if (status == "NOT_FOUND") {
                         Log.e("POIPlace", "장소를 찾을 수 없습니다. 제공된 place_id가 올바른지 확인하세요.")
                     } else {
