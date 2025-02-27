@@ -122,4 +122,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation("io.coil-kt:coil-compose:2.2.2")
+    // Places API
+    implementation("com.google.android.libraries.places:places:4.1.0")
+    implementation("com.android.volley:volley:1.2.1")
+
+
 }
