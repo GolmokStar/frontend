@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.network.MapPinApiService
+import com.example.golmokstar.network.dto.ApiResponse
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinRecordRequest
 import com.example.golmokstar.network.dto.MapPinResponse
@@ -33,7 +34,6 @@ class MapViewModel @Inject constructor(
     private val _mapPins = MutableLiveData<List<MapPinResponse>>()
     val mapPins: LiveData<List<MapPinResponse>> get() = _mapPins
 
-    // TripsDropdownResponse 타입으로 변경
     private val _dropdownItems = MutableLiveData<List<TripsDropdownResponse>>()
     val dropdownItems: LiveData<List<TripsDropdownResponse>> get() = _dropdownItems
 
@@ -130,31 +130,56 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    // 특정 tripId에 해당하는 여행 데이터 호출
+    fun mapPinTripIdApi(tripId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = mapPinApiService.mapPintripId(tripId)
+                if (response.isSuccessful) {
+                    val mapPin = response.body()
+                    if (mapPin != null) {
+                        _mapPins.postValue(listOf(mapPin)) // 하나의 여행 데이터를 리스트 형태로
+                    }
+                } else {
+                    _placeRegisterResult.postValue("해당 여행 데이터를 가져오지 못했습니다.")
+                }
+            } catch (e: Exception) {
+                _placeRegisterResult.postValue("네트워크 오류: ${e.message}")
+            }
+        }
+    }
 
-//    fun dropdownApi() {
-//        viewModelScope.launch {
-//            Log.d("API_CALL", "드롭다운 API 요청 시작") // 요청 로그 추가
-//
-//            try {
-//                val response = withContext(Dispatchers.IO) { mapPinApiService.dropdownPin() }
-//
-//                if (response.isSuccessful) {
-//                    val responseBody = response.body()
-//                    Log.d("API_CALL", "드롭다운 API 응답: ${gson.toJson(responseBody)}") // 응답 데이터 로깅
-//                } else {
-//                    val errorMessage = response.errorBody()?.string() ?: "알 수 없는 오류"
-//                    Log.d("API_CALL", "드롭다운 API 실패: $errorMessage")
-//                    _placeRegisterResult.postValue("여행 목록 조회 실패: $errorMessage")
-//                }
-//            } catch (e: Exception) {
-//                Log.e("API_CALL", "여행 목록 조회 오류: ${e.message}", e)
-//                _placeRegisterResult.postValue("네트워크 오류: ${e.message}")
-//            }
-//        }
-//    }
+    fun dropdownApi() {
+        viewModelScope.launch {
+            try {
+                // API 호출 (Response<ApiResponse> 타입을 명시적으로 지정)
+                val response: Response<ApiResponse> = withContext(Dispatchers.IO) {
+                    mapPinApiService.dropdownPin() // Retrofit에서 API 호출
+                }
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+
+                    // trips 리스트를 추출하여 _dropdownItems에 저장
+                    val trips = responseBody?.trips?.let {
+                        val allTrips = it.filter { trip -> trip.title == "전체 여행" } // "전체 여행" 항목 추출
+                        val otherTrips = it.filter { trip -> trip.title != "전체 여행" } // 나머지 항목들
+                        allTrips + otherTrips // "전체 여행"을 먼저 배치하고 나머지 항목들 이어서 배치
+                    } ?: emptyList() // 리스트가 null일 경우 빈 리스트로 설정
+
+                    Log.d("API_CALL", "드롭다운 API 응답: ${gson.toJson(responseBody)}")
+                    _dropdownItems.postValue(trips) // trips 리스트를 LiveData에 저장
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "알 수 없는 오류"
+                    Log.d("API_CALL", "드롭다운 API 실패: $errorMessage")
+                    _placeRegisterResult.postValue("여행 목록 조회 실패: $errorMessage")
+                }
+            } catch (e: Exception) {
+                Log.e("API_CALL", "여행 목록 조회 오류: ${e.message}", e)
+                _placeRegisterResult.postValue("네트워크 오류: ${e.message}")
+            }
+        }
+    }
+
 }
 
-//// 응답을 감싸는 래핑 클래스
-//data class ApiResponse(
-//    val trips: List<TripsDropdownResponse>  // trips 필드로 변경
-//)
