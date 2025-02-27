@@ -2,6 +2,7 @@ package com.example.golmokstar.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +28,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.*
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.golmokstar.R
+import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.ui.components.NetworkImage
 import com.example.golmokstar.ui.components.TravelTitleField
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.viewmodel.Error
@@ -89,65 +93,6 @@ val samplePlaces = listOf(
     )
 )
 
-val sampleHistories = listOf(
-    History(
-        name = "올림픽공원",
-        address = "서울특별시 송파구",
-        imageUrl = "https://source.unsplash.com/400x300/?seoul,park",
-        rating = 4.7,
-        title = "올림픽공원 산책",
-        content = "서울 올림픽공원에서 자전거를 타며 여유롭게 산책을 즐겼다. 공원 내의 평화로운 분위기가 인상적이었다.",
-        date = "2025.03.10"
-    ), History(
-        name = "불국사",
-        address = "경상북도 경주시",
-        imageUrl = "https://source.unsplash.com/400x300/?temple,kyongju",
-        rating = 4.9,
-        title = "경주 불국사 탐방",
-        content = "불국사의 아름다운 건축과 고요한 분위기에 감동했다. 역사적인 의미를 되새기며 조용히 산책했다.",
-        date = "2025.04.05"
-    ), History(
-        name = "평창",
-        address = "강원도 평창군",
-        imageUrl = "https://source.unsplash.com/400x300/?mountain,pyeongchang",
-        rating = 4.8,
-        title = "평창 스키 여행",
-        content = "평창에서 스키를 타며 겨울을 만끽했다. 눈 덮인 산의 아름다움과 스키장의 즐거움이 인상 깊었다.",
-        date = "2025.02.25"
-    ), History(
-        name = "북촌 한옥마을",
-        address = "서울특별시 종로구",
-        imageUrl = "https://source.unsplash.com/400x300/?hanok,seoul",
-        rating = 4.6,
-        title = "한옥마을 탐방",
-        content = "북촌 한옥마을에서 전통적인 분위기를 느꼈다. 한옥의 아름다움과 조용한 골목이 마음에 들었다.",
-        date = "2025.05.12"
-    ), History(
-        name = "덕진공원",
-        address = "전라북도 전주시 덕진구",
-        imageUrl = "https://source.unsplash.com/400x300/?park,jeonju",
-        rating = 4.4,
-        title = "전주 덕진공원 산책",
-        content = "덕진공원에서 피크닉을 즐기며 봄날의 따뜻한 햇살을 만끽했다. 공원의 아름다움에 감탄했다.",
-        date = "2025.04.20"
-    )
-)
-
-//
-//enum class TravelState {
-//    NONE, // 아무것도 아님
-//    SETTING, // 설정 중
-//    TRAVELING // 여행 중
-//}
-//
-//data class TravelPlan(
-//    val title: String, // 여행 제목 (필수)
-//    val startDate: String, // 시작 날짜 (필수, 예: "2025/06/01")
-//    val endDate: String, // 종료 날짜 (필수, 예: "2025/06/07")
-//    val friends: List<String> = emptyList() // 선택 요소: 친구 리스트 (기본값: 빈 리스트)
-//)
-
-
 
 @Composable
 fun HomeScreen(travelViewModel: TravelViewModel) {
@@ -162,6 +107,8 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
     val travelState by travelViewModel.travelState.collectAsState()
     val currentTravel by travelViewModel.currentTravel.collectAsState()
     val currentError by travelViewModel.currentError.collectAsState()
+    val recentHistory by travelViewModel.recentHistoryList.collectAsState()
+
 
     var travelPlan by remember {
         mutableStateOf(
@@ -169,8 +116,10 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
         )
     }
 
+
     LaunchedEffect(Unit) {
         travelViewModel.getCurrentTravel()
+        travelViewModel.getRecentHistory() // HomeScreen 진입 시 최근 기록 가져오기
     }
 
     LaunchedEffect(currentTravel) {
@@ -181,6 +130,10 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
                 endDate = it.endDate
             )
         }
+    }
+
+    LaunchedEffect(recentHistory) {
+        Log.d("recentHistory", recentHistory.toString())
     }
 
 
@@ -227,12 +180,12 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
             firstComponent = {
                 Text(
                     text = "최근 기록한 장소", style = AppTypography.titleMedium, modifier = Modifier.then(
-                        if (count != 0) Modifier.padding(horizontal = 20.dp) else Modifier
+                        if (recentHistory.isNotEmpty()) Modifier.padding(horizontal = 20.dp) else Modifier
                     )
                 )
             },
-            secondComponent = { RecentHistoryPlace(count = count) },
-            padding = (if (count == 0) 20 else 0)
+            secondComponent = { RecentHistoryPlace(recentHistory) },
+            padding = (if (recentHistory.isEmpty()) 20 else 0)
         )
 
         Section(firstComponent = {
@@ -383,16 +336,15 @@ fun AddFriend() {
     }
 }
 
-
 @Composable
-fun RecentHistoryPlace(count: Int = 0) {
-    if (count == 0) {
+fun RecentHistoryPlace(recentHistory: List<GetHistoryResponse>) {
+    if (recentHistory.isEmpty()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .border(1.dp, MainNavy, shape = RoundedCornerShape(10.dp)) // 테두리 추가
-                .background(White, shape = RoundedCornerShape(10.dp)) // 배경색 추가
+                .border(1.dp, MainNavy, shape = RoundedCornerShape(10.dp))
+                .background(White, shape = RoundedCornerShape(10.dp))
                 .fillMaxWidth()
                 .height(92.dp)
         ) {
@@ -412,13 +364,13 @@ fun RecentHistoryPlace(count: Int = 0) {
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             contentPadding = PaddingValues(horizontal = 20.dp)
         ) {
-            items(sampleHistories.toList()) { history ->
-                HistoryCard(history)
+            items(recentHistory) { history ->
+                HistoryCard(history)  // ✅ 이제 매개변수로 전달된 리스트를 사용
             }
         }
-
     }
 }
+
 
 @Composable
 fun RecommendPlace() {
@@ -455,28 +407,34 @@ fun PlaceCard(place: Place) {
 }
 
 @Composable
-fun HistoryCard(history: History) {
+fun HistoryCard(history: GetHistoryResponse) {
     var isClicked by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier
             .width(200.dp)
             .height(270.dp)
             .clickable { isClicked = !isClicked },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Gray
-        )
     ) {
-        if (!isClicked) {
-            Column(
-                modifier = Modifier.padding(5.dp)
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-                NameCard(history)
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            // 네트워크 이미지 배경 (맨 아래로 배치)
+            NetworkImage(
+                photoUrl = history.photo,
+            )
+
+            if (!isClicked) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(5.dp)
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    NameCard(history)
+                }
+            } else {
+                OverCard(history)
             }
-        } else {
-            OverCard(history)
         }
     }
 }
@@ -524,7 +482,7 @@ fun NameCard(data: Any) {
             }
         }
 
-        is History -> {
+        is GetHistoryResponse -> {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -546,10 +504,10 @@ fun NameCard(data: Any) {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = data.name, color = White, style = AppTypography.bodyMedium
+                            text = data.placeName, color = White, style = AppTypography.bodyMedium
                         )
                         Text(
-                            text = data.title,
+                            text = data.tripTitle,
                             color = TextLightGray,
                             style = AppTypography.labelLarge
                         )
@@ -569,7 +527,7 @@ fun NameCard(data: Any) {
                                 tint = TextLightGray
                             )
                             Text(
-                                text = data.address,
+                                text = data.googlePlaceId,
                                 color = TextLightGray,
                                 style = AppTypography.labelMedium
                             )
@@ -603,7 +561,7 @@ fun NameCard(data: Any) {
 
 
 @Composable
-fun OverCard(history: History) {
+fun OverCard(history: GetHistoryResponse) {
     Card(
         modifier = Modifier.fillMaxSize(), colors = CardDefaults.cardColors(BlurBackgroundGray)
     ) {
@@ -616,7 +574,7 @@ fun OverCard(history: History) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = history.name, color = White, style = AppTypography.bodyMedium)
+                Text(text = history.placeName, color = White, style = AppTypography.bodyMedium)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -634,10 +592,14 @@ fun OverCard(history: History) {
                 }
             }
 
-            Text(text = history.address, color = TextLightGray, style = AppTypography.labelMedium)
+            Text(
+                text = history.googlePlaceId,
+                color = TextLightGray,
+                style = AppTypography.labelMedium
+            )
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    text = history.content,
+                    text = history.comment,
                     color = White,
                     style = AppTypography.labelMedium,
                 )
@@ -647,8 +609,16 @@ fun OverCard(history: History) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = history.title, color = TextLightGray, style = AppTypography.labelMedium)
-                Text(text = history.date, color = TextLightGray, style = AppTypography.labelMedium)
+                Text(
+                    text = history.tripTitle,
+                    color = TextLightGray,
+                    style = AppTypography.labelMedium
+                )
+                Text(
+                    text = history.visitDate,
+                    color = TextLightGray,
+                    style = AppTypography.labelMedium
+                )
             }
 
         }

@@ -9,6 +9,6 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface HistoryApiService {
-    @GET("record/recent")
-    suspend fun getRecentHistory() : Response<GetHistoryResponse>
+
+
 }

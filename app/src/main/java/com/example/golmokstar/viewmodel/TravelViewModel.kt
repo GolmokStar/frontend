@@ -4,12 +4,14 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.golmokstar.network.HistoryApiService
 import com.example.golmokstar.network.TravelApiService
 import com.example.golmokstar.network.dto.ChangeTravelRequest
 import com.example.golmokstar.network.dto.GetTravelCurrentResponse
 import com.example.golmokstar.network.dto.GetTravelResponse
 import com.example.golmokstar.network.dto.CreateTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelResponse
+import com.example.golmokstar.network.dto.GetHistoryResponse
 import com.example.golmokstar.utils.formatToDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +40,8 @@ enum class Error {
     Both, // 둘 다 없음
 }
 
+
+
 @HiltViewModel
 class TravelViewModel @Inject constructor(
     application: Application
@@ -52,8 +56,18 @@ class TravelViewModel @Inject constructor(
     private val _currentTravel = MutableStateFlow<Travel?>(null)
     val currentTravel: StateFlow<Travel?> = _currentTravel
 
+    private val _historyList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())  // ✅ 리스트로 변경
+    val historyList: StateFlow<List<GetHistoryResponse>> = _historyList  // ✅ 리스트로 변경
+
+
     private val _currentError = MutableStateFlow(Error.NONE)
     val currentError: StateFlow<Error> = _currentError
+
+
+    private val _recentHistoryList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())
+    val recentHistoryList: StateFlow<List<GetHistoryResponse>> = _recentHistoryList
+
+
 
     suspend fun getCurrentTravel() {
         try {
@@ -201,24 +215,22 @@ class TravelViewModel @Inject constructor(
         }
     }
 
-
-
-//    suspend fun createTravel(request: CreateTravelRequest): Pair<Int, CreateTravelResponse?> {
-//        return try {
-//            val response: Response<CreateTravelResponse> = travelApiService.createTravel(request)
-//            val responseBodyString = Gson().toJson(response.body())
-//            Log.d("TravelViewModel", "서버 응답 JSON: $responseBodyString")
-//
-//            val createTravelResponse = try {
-//                Gson().fromJson(responseBodyString, CreateTravelResponse::class.java)
-//            } catch (e: JsonSyntaxException) {
-//                null
-//            }
-//
-//            response.code() to createTravelResponse
-//        } catch (e: Exception) {
-//            Log.e("TravelViewModel", "서버 요청 실패: ${e.message}")
-//            500 to null
-//        }
-//    }
+    fun getRecentHistory() {
+        viewModelScope.launch {
+            try {
+                val response = travelApiService.getRecentHistory()
+                if (response.isSuccessful) {
+                    response.body()?.let { historyResponse ->
+                        _recentHistoryList.value = historyResponse  // ✅ 리스트를 직접 저장
+                    } ?: run {
+                        _recentHistoryList.value = emptyList()
+                    }
+                } else {
+                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("네트워크 요청 실패", " ${e.message}")
+            }
+        }
+    }
 }

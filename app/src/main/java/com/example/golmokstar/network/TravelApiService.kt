@@ -3,6 +3,7 @@ package com.example.golmokstar.network
 import com.example.golmokstar.network.dto.ChangeTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelResponse
+import com.example.golmokstar.network.dto.GetHistoryResponse
 import com.example.golmokstar.network.dto.GetTravelCurrentResponse
 import com.example.golmokstar.network.dto.GetTravelResponse
 import retrofit2.Response
@@ -25,4 +26,7 @@ interface TravelApiService {
 
     @PUT("trips/{tripId}")
     suspend fun changeTravel(@Path("tripId") tripsId: String, @Body request: ChangeTravelRequest) : Response<GetTravelCurrentResponse>
+
+    @GET("record/recent")
+    suspend fun getRecentHistory() : Response<List<GetHistoryResponse>>
 }
