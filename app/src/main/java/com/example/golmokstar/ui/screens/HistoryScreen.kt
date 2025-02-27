@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,7 +37,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,14 +51,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.R
+import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.ui.components.NavyBox
+import com.example.golmokstar.ui.components.NetworkImage
 import com.example.golmokstar.ui.components.YellowMarkerIcon
 import com.example.golmokstar.ui.theme.AppTypography
 import com.example.golmokstar.ui.theme.BlurBackgroundGray
@@ -64,6 +74,9 @@ import com.example.golmokstar.ui.theme.TextBlack
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.TextLightGray
 import com.example.golmokstar.ui.theme.White
+import com.example.golmokstar.viewmodel.Travel
+import com.example.golmokstar.viewmodel.TravelViewModel
+import com.example.golmokstar.viewmodel.MapViewModel
 
 data class Sampledata(
     val name: String,
@@ -125,14 +138,24 @@ val samplehistorydata = listOf(
     )
 )
 
-@Preview
 @Composable
-fun HistoryScreen() {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("전체") }
-
+fun HistoryScreen(
+    travelViewModel: TravelViewModel,
+    mapViewModel: MapViewModel = hiltViewModel()
+) {
     var showDialog by remember { mutableStateOf(false) }
 
+    val selectedItem by travelViewModel.currentTripList.collectAsState()
+    val historyList by travelViewModel.recentHistoryList.collectAsState()
+
+    LaunchedEffect(Unit) {
+        mapViewModel.dropdownApi()
+        travelViewModel.getHistory(selectedItem.tripId.toString())
+    }
+
+    LaunchedEffect(selectedItem) {
+        travelViewModel.getHistory(selectedItem.tripId.toString())
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -141,117 +164,90 @@ fun HistoryScreen() {
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
-            // 드롭다운 메뉴
-            DropdownMenuSection(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                selectedItem = selectedItem,
-                onItemSelect = { selectedItem = it },
-                modifier = Modifier.width(180.dp).height(50.dp)
-            )
+            // 🔹 `selectedItem`을 `HistoryDropdownScreen`에 전달하고 선택 이벤트를 처리하도록 설정
+            Box(modifier = Modifier.fillMaxSize()) {
+                HistoryDropdownScreen(
+                    viewModel = mapViewModel,
+                    selectedItem = selectedItem,
+                    onItemSelected = { newItem ->
+                        travelViewModel.updateSelectedTrip(newItem)
+                    }
+                )
+            }
+
             Spacer(modifier = Modifier.height(25.dp))
         }
 
-        // samplehistorydata가 비어 있는지 확인
-        if (samplehistorydata.isEmpty()) {
-            item {
-                NoRecord() // 데이터가 없으면 NoRecord 표시
-            }
+        if (historyList.isEmpty()) {
+            item { NoRecord() }
         } else {
-            // 데이터가 있을 경우 LazyColumn의 항목들을 표시
-            items(samplehistorydata) { sampledata ->
-                if (sampledata.content.isEmpty()) {
-                    NavyBox(
-                        address = sampledata.address,
-                        onBoxClick = { },
-                        date = sampledata.date,
-                        name = sampledata.name,
-                        topLeftText = sampledata.title,
-                        modifier = Modifier.fillMaxWidth(),
-                        onButtonClick = { showDialog = true },
-                        icon = { YellowMarkerIcon(Modifier.size(15.dp)) }
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-            }
-
-            items(samplehistorydata.toList()) { sampledata ->
-                OptionCard(sampledata)
+            items(historyList) { data ->
+                OptionCard(data)
                 Spacer(Modifier.height(5.dp))
-                CommonRow(sampledata)
+                CommonRow(data)
             }
         }
     }
 
-    // Report 다이얼로그 표시
     if (showDialog) {
         Report(onDismiss = { showDialog = false })
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropdownMenuSection(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    selectedItem: String,
-    onItemSelect: (String) -> Unit,
-    modifier: Modifier = Modifier
+fun HistoryDropdownScreen(
+    viewModel: MapViewModel,
+    selectedItem: TripsDropdownResponse,
+    onItemSelected: (TripsDropdownResponse) -> Unit
 ) {
-    val items = listOf("전체", "옵션 1", "옵션 2", "옵션 3")
+    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList())
+    var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        modifier = modifier
+        onExpandedChange = { expanded = it },
+        modifier = Modifier
+            .padding(16.dp)
+            .width(180.dp)
+            .height(50.dp)
+            .background(White)
     ) {
         OutlinedTextField(
-            value = selectedItem,
+            value = selectedItem.title,
             onValueChange = {},
             readOnly = true,
             shape = RoundedCornerShape(12.dp),
             trailingIcon = {
-                IconButton(
-                    onClick = {
-                        onExpandedChange(!expanded)
-                    }
-                ) {
+                IconButton(onClick = { expanded = !expanded }) {
                     Icon(
-                        imageVector = if (expanded)
-                            ImageVector.vectorResource(id = R.drawable.arrow_drop_up_icon)
-                        else
-                            ImageVector.vectorResource(id = R.drawable.arrow_drop_down_icon),
-                        contentDescription = "드롭다운 열기",
-                        tint = IconGray
+                        imageVector = if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
+                        else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
+                        contentDescription = "Toggle dropdown"
                     )
                 }
             },
             modifier = Modifier.menuAnchor(),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = White,
-                focusedBorderColor = IconGray,
                 unfocusedBorderColor = IconGray,
-                focusedTextColor = TextDarkGray,
-                unfocusedTextColor = TextDarkGray
-            ),
-            textStyle = AppTypography.bodyMedium,
+                focusedBorderColor = IconGray,
+                focusedLabelColor = TextDarkGray,
+                unfocusedLabelColor = TextDarkGray
+            )
         )
 
-        // ExposedDropdownMenu
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = {
-                // 외부 클릭 시 드롭다운을 닫기
-                onExpandedChange(false)
-            },
+            onDismissRequest = { expanded = false },
             modifier = Modifier.background(White)
         ) {
-            items.forEach { item ->
+            dropdownItems.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
+                    text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
                     onClick = {
-                        onItemSelect(item)
-                        onExpandedChange(false)
+                        onItemSelected(item)  // 🔹 부모에서 상태 업데이트
+                        expanded = false
                     }
                 )
             }
@@ -259,8 +255,9 @@ fun DropdownMenuSection(
     }
 }
 
+
 @Composable
-fun OptionCard(sampledata: Sampledata) {
+fun OptionCard(history: GetHistoryResponse) {
     var isClicked by remember { mutableStateOf(false) }
 
     Card(
@@ -271,14 +268,23 @@ fun OptionCard(sampledata: Sampledata) {
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Gray),
     ) {
-        if (isClicked) {
-            ClickCard(sampledata)
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            // 네트워크 이미지 배경 (맨 아래로 배치)
+            NetworkImage(
+                photoUrl = history.photo,
+            )
+
+            if (isClicked) {
+                ClickCard(history)
+            }
         }
+
     }
 }
 
 @Composable
-fun ClickCard(sampledata: Sampledata) {
+fun ClickCard(history: GetHistoryResponse) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally // 이 부분은 Column에 적용
@@ -292,8 +298,8 @@ fun ClickCard(sampledata: Sampledata) {
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = sampledata.name, color = White, style = AppTypography.bodyLarge)
-                    Text(text = sampledata.address, color = TextLightGray, style = AppTypography.labelMedium)
+                    Text(text = history.placeName, color = White, style = AppTypography.bodyLarge)
+                    Text(text = history.googlePlaceId, color = TextLightGray, style = AppTypography.labelMedium)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -302,7 +308,7 @@ fun ClickCard(sampledata: Sampledata) {
                     modifier = Modifier.width(200.dp).wrapContentHeight(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = sampledata.content, color = White, style = AppTypography.labelSmall)
+                    Text(text = history.comment, color = White, style = AppTypography.labelSmall)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -312,8 +318,8 @@ fun ClickCard(sampledata: Sampledata) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = sampledata.title, color = TextLightGray, style = AppTypography.labelMedium)
-                    Text(text = sampledata.date, color = TextLightGray, style = AppTypography.labelMedium)
+                    Text(text = history.tripTitle, color = TextLightGray, style = AppTypography.labelMedium)
+                    Text(text = history.visitDate, color = TextLightGray, style = AppTypography.labelMedium)
                 }
             }
         }
@@ -322,20 +328,20 @@ fun ClickCard(sampledata: Sampledata) {
 
 // 공통 Row 부분을 분리한 함수
 @Composable
-fun CommonRow(sampledata: Sampledata) {
+fun CommonRow(history: GetHistoryResponse) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = sampledata.name, color = TextBlack, style = AppTypography.labelMedium)
+        Text(text = history.placeName, color = TextBlack, style = AppTypography.labelMedium)
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.star_icon), contentDescription = "별 아이콘", tint = TextBlack)
-            Text(text = sampledata.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
+            Text(text = history.rating.toString(), color = TextBlack, style = AppTypography.labelMedium)
         }
     }
 

@@ -110,7 +110,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
-    TripDropdownScreen(viewModel = viewModel)
+    MapDropdownScreen(viewModel = viewModel)
 
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
@@ -488,7 +488,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 
             // 상단 왼쪽에 드롭다운 배치
             Box(modifier = Modifier.fillMaxSize()) {
-                TripDropdownScreen(
+                MapDropdownScreen(
                     viewModel = viewModel(), // ViewModel 전달
                     modifier = Modifier
                         .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
@@ -501,10 +501,10 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
+fun MapDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
     val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
     var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
+    var selectedItem by remember { mutableStateOf(TripsDropdownResponse(0,"선택해주세요" ))} // 기본값
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -516,7 +516,7 @@ fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
             .background(White)
     ) {
         OutlinedTextField(
-            value = selectedItem,
+            value = selectedItem.title,
             onValueChange = {},
             readOnly = true,
             shape = RoundedCornerShape(12.dp),
@@ -551,7 +551,7 @@ fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
                 DropdownMenuItem(
                     text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
                     onClick = {
-                        selectedItem = item.title
+                        selectedItem = item
                         expanded = false
                     }
                 )
@@ -569,11 +569,17 @@ fun LocationItemList() {
         horizontalAlignment = Alignment.CenterHorizontally // 수평 정렬 중앙
     ) {
         // "찜한 장소" 항목
-        LocationItem(text = "찜한 장소", icon = { RedMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        LocationItem(text = "찜한 장소", icon = { RedMarkerIcon(modifier = Modifier
+            .size(25.dp)
+            .padding(start = 8.dp)) })
         // "방문 장소" 항목
-        LocationItem(text = "방문 장소", icon = { YellowMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        LocationItem(text = "방문 장소", icon = { YellowMarkerIcon(modifier = Modifier
+            .size(25.dp)
+            .padding(start = 8.dp)) })
         // "기록 장소" 항목
-        LocationItem(text = "기록 장소", icon = { BlueMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        LocationItem(text = "기록 장소", icon = { BlueMarkerIcon(modifier = Modifier
+            .size(25.dp)
+            .padding(start = 8.dp)) })
     }
 }
 

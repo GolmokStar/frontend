@@ -63,6 +63,10 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy.force("androidx.appcompat:appcompat:1.6.1")
+}
+
 dependencies {
     // ✅ AndroidX Core
     implementation(libs.androidx.core.ktx)
@@ -120,6 +124,8 @@ dependencies {
     // ✅ 디버깅 관련 도구
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("io.coil-kt:coil-compose:2.2.2")
 
     // Places API
     implementation("com.google.android.libraries.places:places:4.1.0")

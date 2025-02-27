@@ -4,12 +4,16 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.golmokstar.network.HistoryApiService
 import com.example.golmokstar.network.TravelApiService
 import com.example.golmokstar.network.dto.ChangeTravelRequest
 import com.example.golmokstar.network.dto.GetTravelCurrentResponse
 import com.example.golmokstar.network.dto.GetTravelResponse
 import com.example.golmokstar.network.dto.CreateTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelResponse
+import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.network.dto.RecommendResponsed
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.utils.formatToDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +42,8 @@ enum class Error {
     Both, // 둘 다 없음
 }
 
+
+
 @HiltViewModel
 class TravelViewModel @Inject constructor(
     application: Application
@@ -52,8 +58,29 @@ class TravelViewModel @Inject constructor(
     private val _currentTravel = MutableStateFlow<Travel?>(null)
     val currentTravel: StateFlow<Travel?> = _currentTravel
 
+
     private val _currentError = MutableStateFlow(Error.NONE)
     val currentError: StateFlow<Error> = _currentError
+
+
+    private val _recentHistoryList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())
+    val recentHistoryList: StateFlow<List<GetHistoryResponse>> = _recentHistoryList
+
+    private val _historyList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())
+    val historyList: StateFlow<List<GetHistoryResponse>> = _historyList
+
+    private val _currentTripList = MutableStateFlow<TripsDropdownResponse>(TripsDropdownResponse(0, "선택해주세요"))
+    val currentTripList: StateFlow<TripsDropdownResponse> = _currentTripList
+
+    private val _aiPlaceList = MutableStateFlow<List<RecommendResponsed>>(emptyList())
+    val aiPlaceList: StateFlow<List<RecommendResponsed>> = _aiPlaceList
+
+
+    fun updateSelectedTrip(newItem: TripsDropdownResponse) {
+        _currentTripList.value = newItem
+        getHistory(newItem.tripId.toString()) // 선택한 여행에 따라 히스토리 갱신
+        Log.d("currentTripList", currentTripList.value.toString())
+    }
 
     suspend fun getCurrentTravel() {
         try {
@@ -75,6 +102,27 @@ class TravelViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e("TravelViewModel", "서버 요청 실패: ${e.message}")
             _travelState.value = TravelState.NONE
+        }
+    }
+
+
+    fun getAIPlace() {
+        viewModelScope.launch {
+            try {
+                val response = travelApiService.getRecommend()
+                if (response.isSuccessful) {
+                    Log.e("AIresponse", response.body().toString())
+                    response.body()?.let { placeResponse ->
+                        _aiPlaceList.value =  placeResponse  // ✅ 리스트를 직접 저장
+                    } ?: run {
+                        _aiPlaceList.value = emptyList()
+                    }
+                } else {
+                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("네트워크 요청 실패", " ${e.message}")
+            }
         }
     }
 
@@ -201,24 +249,41 @@ class TravelViewModel @Inject constructor(
         }
     }
 
+    fun getRecentHistory() {
+        viewModelScope.launch {
+            try {
+                val response = travelApiService.getRecentHistory()
+                if (response.isSuccessful) {
+                    response.body()?.let { historyResponse ->
+                        _recentHistoryList.value = historyResponse  // ✅ 리스트를 직접 저장
+                    } ?: run {
+                        _recentHistoryList.value = emptyList()
+                    }
+                } else {
+                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("네트워크 요청 실패", " ${e.message}")
+            }
+        }
+    }
 
-
-//    suspend fun createTravel(request: CreateTravelRequest): Pair<Int, CreateTravelResponse?> {
-//        return try {
-//            val response: Response<CreateTravelResponse> = travelApiService.createTravel(request)
-//            val responseBodyString = Gson().toJson(response.body())
-//            Log.d("TravelViewModel", "서버 응답 JSON: $responseBodyString")
-//
-//            val createTravelResponse = try {
-//                Gson().fromJson(responseBodyString, CreateTravelResponse::class.java)
-//            } catch (e: JsonSyntaxException) {
-//                null
-//            }
-//
-//            response.code() to createTravelResponse
-//        } catch (e: Exception) {
-//            Log.e("TravelViewModel", "서버 요청 실패: ${e.message}")
-//            500 to null
-//        }
-//    }
+    fun getHistory(tripId : String) {
+        viewModelScope.launch {
+            try {
+                val response = travelApiService.getHistory(tripId)
+                if (response.isSuccessful) {
+                    response.body()?.let { historyResponse ->
+                        _historyList.value = historyResponse  // ✅ 리스트를 직접 저장
+                    } ?: run {
+                        _historyList.value = emptyList()
+                    }
+                } else {
+                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("네트워크 요청 실패", " ${e.message}")
+            }
+        }
+    }
 }
