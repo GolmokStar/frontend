@@ -11,36 +11,8 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
-
-//object RetrofitClient {
-//    private val gson: Gson = GsonBuilder()
-//        .setLenient()
-//        .create()
-//
-//    // ✅ OkHttpClient에 AuthInterceptor 추가
-//    private val okHttpClient by lazy {
-//        OkHttpClient.Builder()
-//            .addInterceptor(AuthInterceptor()) // ✅ 인증 Interceptor 적용
-//            .connectTimeout(30, TimeUnit.SECONDS) // 타임아웃 설정
-//            .readTimeout(30, TimeUnit.SECONDS)
-//            .writeTimeout(30, TimeUnit.SECONDS)
-//            .build()
-//    }
-//
-//    private val retrofit by lazy {
-//        Retrofit.Builder()
-//            .baseUrl(BuildConfig.BASE_URL)  // ✅ 서버 URL 설정
-//            .addConverterFactory(GsonConverterFactory.create(gson))
-//            .client(okHttpClient) // ✅ 커스텀 OkHttpClient 적용
-//            .build()
-//    }
-//
-//    val authApiService: AuthApiService by lazy {
-//        retrofit.create(AuthApiService::class.java)
-//    }
-//}
-
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -65,32 +37,59 @@ object NetworkModule {
             .build()
     }
 
+    /**
+     * ✅ 기본 Retrofit 인스턴스 (일반 API 용)
+     */
     @Provides
     @Singleton
+    @Named("DefaultRetrofit") // ✅ Retrofit 구분을 위한 `@Named` 추가
     fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL) // ✅ 서버 URL 설정
+            .baseUrl(BuildConfig.BASE_URL) // ✅ 서버 API URL
             .addConverterFactory(GsonConverterFactory.create(gson))
-            .client(okHttpClient) // ✅ 커스텀 OkHttpClient 적용
+            .client(okHttpClient)
             .build()
     }
 
+    /**
+     * ✅ API 서비스 주입 (기본 Retrofit)
+     */
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+    fun provideAuthApiService(@Named("DefaultRetrofit") retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideTravelApiService(retrofit: Retrofit): TravelApiService {
+    fun provideTravelApiService(@Named("DefaultRetrofit") retrofit: Retrofit): TravelApiService {
         return retrofit.create(TravelApiService::class.java)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideMapPinAPI(@Named("DefaultRetrofit") retrofit: Retrofit): MapPinApiService {
+        return retrofit.create(MapPinApiService::class.java)
+    }
+
+    /**
+     * ✅ Google Places API 서비스 주입
+     */
+
+    @Provides
+    @Singleton
+    @Named("PlacesRetrofit")
+    fun providePlacesRetrofit(gson: Gson): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://places.googleapis.com/")  // ✅ Google Places API 베이스 URL
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
     }
 
     @Provides
     @Singleton
-    fun provideMapPinAPI(retrofit: Retrofit): MapPinApiService {
-        return retrofit.create(MapPinApiService::class.java)
+    fun providePlacesApiService(@Named("PlacesRetrofit") retrofit: Retrofit): PlacesApiService {
+        return retrofit.create(PlacesApiService::class.java)
     }
-
 }

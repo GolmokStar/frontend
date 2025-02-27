@@ -35,6 +35,7 @@ import com.example.golmokstar.ui.components.NetworkImage
 import com.example.golmokstar.ui.components.TravelTitleField
 import com.example.golmokstar.ui.theme.*
 import com.example.golmokstar.viewmodel.Error
+import com.example.golmokstar.viewmodel.PlacesViewModel
 import com.example.golmokstar.viewmodel.Travel
 import com.example.golmokstar.viewmodel.TravelState
 import com.example.golmokstar.viewmodel.TravelViewModel
@@ -95,7 +96,7 @@ val samplePlaces = listOf(
 
 
 @Composable
-fun HomeScreen(travelViewModel: TravelViewModel) {
+fun HomeScreen(travelViewModel: TravelViewModel, placesViewModel: PlacesViewModel) {
 
     // FocusManager 객체 생성
     val focusManager = LocalFocusManager.current
@@ -119,6 +120,7 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
     LaunchedEffect(Unit) {
         travelViewModel.getCurrentTravel()
         travelViewModel.getRecentHistory() // HomeScreen 진입 시 최근 기록 가져오기
+        placesViewModel.getPlace(37.545057, 126.960313)
     }
 
     LaunchedEffect(currentTravel) {

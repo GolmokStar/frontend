@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.golmokstar.network.AuthApiService
 import com.example.golmokstar.network.HistoryApiService
 import com.example.golmokstar.network.TravelApiService
 import com.example.golmokstar.network.dto.ChangeTravelRequest
@@ -12,6 +13,7 @@ import com.example.golmokstar.network.dto.GetTravelResponse
 import com.example.golmokstar.network.dto.CreateTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelResponse
 import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.repository.PlacesRepository
 import com.example.golmokstar.utils.formatToDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,14 +43,16 @@ enum class Error {
 }
 
 
-
 @HiltViewModel
 class TravelViewModel @Inject constructor(
-    application: Application
+    application: Application,
 ) : AndroidViewModel(application) {
 
     @Inject
     lateinit var travelApiService: TravelApiService
+
+
+
 
     private val _travelState = MutableStateFlow<TravelState>(TravelState.NONE)
     val travelState: StateFlow<TravelState> = _travelState
@@ -75,7 +79,7 @@ class TravelViewModel @Inject constructor(
 
             if (response.isSuccessful) {
                 response.body()?.let { travelResponse ->
-                    if(travelResponse.tripId == null) {
+                    if (travelResponse.tripId == null) {
                         _travelState.value = TravelState.NONE
                     } else {
                         _travelState.value = TravelState.TRAVELING
@@ -90,7 +94,6 @@ class TravelViewModel @Inject constructor(
             _travelState.value = TravelState.NONE
         }
     }
-
 
 
     suspend fun getTravel(tripId: String) {
@@ -119,31 +122,36 @@ class TravelViewModel @Inject constructor(
                 Log.e("state", _travelState.value.toString())
                 _travelState.value = TravelState.SETTING
             }
+
             TravelState.NONE -> {
                 Log.e("state", _travelState.value.toString())
                 _travelState.value = TravelState.SETTING
             }
+
             else -> {
                 Log.e("state", _travelState.value.toString())
             }
         }
     }
 
-    fun setTravel(travelPlan : Travel) {
+    fun setTravel(travelPlan: Travel) {
         when {
             travelPlan.title.isEmpty() && (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty()) -> {
                 _currentError.value = Error.Both
             }
+
             travelPlan.title.isEmpty() -> {
                 _currentError.value = Error.Title
             }
+
             travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty() -> {
                 _currentError.value = Error.Date
             }
+
             else -> {
                 _currentError.value = Error.NONE
 
-                if(_currentTravel.value == null) {
+                if (_currentTravel.value == null) {
                     Log.d("travel", "여행 등록")
                     viewModelScope.launch {
                         createTravel(
@@ -154,20 +162,26 @@ class TravelViewModel @Inject constructor(
                             )
                         )
                     }
-                }
-                else if (
+                } else if (
                     _currentTravel.value?.title == travelPlan.title &&
                     _currentTravel.value?.startDate == travelPlan.startDate &&
                     _currentTravel.value?.endDate == travelPlan.endDate
                 ) {
                     Log.d("travel", "바뀐거없음")
                     _travelState.value = TravelState.TRAVELING
-                }
-                else {
+                } else {
                     Log.d("travel", "여행 재설정")
                     _currentTravel.value?.id?.let { tripId ->
                         viewModelScope.launch {
-                            changeTravel(tripId, ChangeTravelRequest(tripId, travelPlan.title, travelPlan.startDate.formatToDate(), travelPlan.endDate.formatToDate()))
+                            changeTravel(
+                                tripId,
+                                ChangeTravelRequest(
+                                    tripId,
+                                    travelPlan.title,
+                                    travelPlan.startDate.formatToDate(),
+                                    travelPlan.endDate.formatToDate()
+                                )
+                            )
                         }
                     }
                 }
@@ -177,8 +191,9 @@ class TravelViewModel @Inject constructor(
 
     suspend fun changeTravel(tripId: String, request: ChangeTravelRequest) {
         try {
-            Log.e("request",  request.toString())
-            val response: Response<GetTravelCurrentResponse> = travelApiService.changeTravel(tripId, request)
+            Log.e("request", request.toString())
+            val response: Response<GetTravelCurrentResponse> =
+                travelApiService.changeTravel(tripId, request)
             Log.d("TravelViewModel", "changeTravel 응답: ${response.body()}")
 
             if (response.isSuccessful) {
@@ -195,7 +210,7 @@ class TravelViewModel @Inject constructor(
     }
 
     suspend fun createTravel(request: CreateTravelRequest) {
-        Log.e("request",  request.toString())
+        Log.e("request", request.toString())
         try {
             val response: Response<CreateTravelResponse> = travelApiService.createTravel(request)
             Log.d("TravelViewModel", "createTravel 응답: ${response.body()}")
@@ -225,7 +240,7 @@ class TravelViewModel @Inject constructor(
                         _recentHistoryList.value = emptyList()
                     }
                 } else {
-                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                    Log.e("서버 응답 오류", "${response.code()} - ${response.message()}")
                 }
             } catch (e: Exception) {
                 Log.e("네트워크 요청 실패", " ${e.message}")
@@ -233,7 +248,7 @@ class TravelViewModel @Inject constructor(
         }
     }
 
-    fun getHistory(tripId : String) {
+    fun getHistory(tripId: String) {
         viewModelScope.launch {
             try {
                 val response = travelApiService.getHistory(tripId)
@@ -244,7 +259,7 @@ class TravelViewModel @Inject constructor(
                         _historyList.value = emptyList()
                     }
                 } else {
-                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                    Log.e("서버 응답 오류", "${response.code()} - ${response.message()}")
                 }
             } catch (e: Exception) {
                 Log.e("네트워크 요청 실패", " ${e.message}")

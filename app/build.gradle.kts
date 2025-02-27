@@ -29,10 +29,20 @@ android {
 
         val baseUrl = properties.getProperty("base.url", "https://fallback-url.com/")
         val googleClientId = properties.getProperty("google.client.id", "")
+        val googleMapsApiKey = properties.getProperty("google.maps.api.key", "")
+
 
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"$googleClientId\"")
+        buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"$googleMapsApiKey\"")
+
+
+        println("BUILD_CONFIG: BASE_URL = $baseUrl")
+        println("BUILD_CONFIG: GOOGLE_CLIENT_ID = $googleClientId")
+        println("BUILD_CONFIG: GOOGLE_MAPS_API_KEY = $googleMapsApiKey")
     }
+
+
 
     buildTypes {
         release {

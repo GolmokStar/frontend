@@ -501,7 +501,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
-    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
+    //val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
 
@@ -546,15 +546,15 @@ fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
 
         ) {
             // API에서 받아온 데이터 표시
-            dropdownItems.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
-                    onClick = {
-                        selectedItem = item.title
-                        expanded = false
-                    }
-                )
-            }
+//            dropdownItems.forEach { item ->
+//                DropdownMenuItem(
+//                    text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
+//                    onClick = {
+//                        selectedItem = item.title
+//                        expanded = false
+//                    }
+//                )
+//            }
         }
     }
 }
