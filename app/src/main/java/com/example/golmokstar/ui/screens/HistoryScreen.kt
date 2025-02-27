@@ -62,6 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.R
 import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.ui.components.NavyBox
 import com.example.golmokstar.ui.components.NetworkImage
 import com.example.golmokstar.ui.components.YellowMarkerIcon
@@ -138,30 +139,23 @@ val samplehistorydata = listOf(
 )
 
 @Composable
-fun HistoryScreen(travelViewModel: TravelViewModel,
-    mapViewModel: MapViewModel = hiltViewModel()) {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("전체") }
+fun HistoryScreen(
+    travelViewModel: TravelViewModel,
+    mapViewModel: MapViewModel = hiltViewModel()
+) {
     var showDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.dropdownApi()
-    }
-
-
+    val selectedItem by travelViewModel.currentTripList.collectAsState()
     val historyList by travelViewModel.recentHistoryList.collectAsState()
 
-
-
     LaunchedEffect(Unit) {
-        travelViewModel.getHistory("0")
+        mapViewModel.dropdownApi()
+        travelViewModel.getHistory(selectedItem.tripId.toString())
     }
 
-    LaunchedEffect(historyList) {
-        Log.d("historyList", historyList.toString())
+    LaunchedEffect(selectedItem) {
+        travelViewModel.getHistory(selectedItem.tripId.toString())
     }
-
-
 
     LazyColumn(
         modifier = Modifier
@@ -170,43 +164,23 @@ fun HistoryScreen(travelViewModel: TravelViewModel,
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
-
-            // 상단 왼쪽에 드롭다운 배치
+            // 🔹 `selectedItem`을 `HistoryDropdownScreen`에 전달하고 선택 이벤트를 처리하도록 설정
             Box(modifier = Modifier.fillMaxSize()) {
-                MapDropdownScreen(
-                    viewModel = viewModel(), // ViewModel 전달
-                    modifier = Modifier
-                        .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
-
+                HistoryDropdownScreen(
+                    viewModel = mapViewModel,
+                    selectedItem = selectedItem,
+                    onItemSelected = { newItem ->
+                        travelViewModel.updateSelectedTrip(newItem)
+                    }
                 )
             }
 
             Spacer(modifier = Modifier.height(25.dp))
         }
 
-        // samplehistorydata가 비어 있는지 확인
-        if (samplehistorydata.isEmpty()) {
-            item {
-                NoRecord() // 데이터가 없으면 NoRecord 표시
-            }
+        if (historyList.isEmpty()) {
+            item { NoRecord() }
         } else {
-            // 데이터가 있을 경우 LazyColumn의 항목들을 표시
-            items(samplehistorydata) { sampledata ->
-                if (sampledata.content.isEmpty()) {
-                    NavyBox(
-                        address = sampledata.address,
-                        onBoxClick = { },
-                        date = sampledata.date,
-                        name = sampledata.name,
-                        topLeftText = sampledata.title,
-                        modifier = Modifier.fillMaxWidth(),
-                        onButtonClick = { showDialog = true },
-                        icon = { YellowMarkerIcon(Modifier.size(15.dp)) }
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-            }
-
             items(historyList) { data ->
                 OptionCard(data)
                 Spacer(Modifier.height(5.dp))
@@ -215,18 +189,21 @@ fun HistoryScreen(travelViewModel: TravelViewModel,
         }
     }
 
-    // Report 다이얼로그 표시
     if (showDialog) {
         Report(onDismiss = { showDialog = false })
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
-    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
+fun HistoryDropdownScreen(
+    viewModel: MapViewModel,
+    selectedItem: TripsDropdownResponse,
+    onItemSelected: (TripsDropdownResponse) -> Unit
+) {
+    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList())
     var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -238,7 +215,7 @@ fun HistoryDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier
             .background(White)
     ) {
         OutlinedTextField(
-            value = selectedItem,
+            value = selectedItem.title,
             onValueChange = {},
             readOnly = true,
             shape = RoundedCornerShape(12.dp),
@@ -253,27 +230,23 @@ fun HistoryDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier
             },
             modifier = Modifier.menuAnchor(),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                unfocusedBorderColor = IconGray,  // 포커스가 없는 상태일 때 외곽선 색상
-                focusedBorderColor = IconGray,    // 포커스가 있는 상태일 때 외곽선 색상
+                unfocusedBorderColor = IconGray,
+                focusedBorderColor = IconGray,
                 focusedLabelColor = TextDarkGray,
                 unfocusedLabelColor = TextDarkGray
             )
-
-
         )
 
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier.background(White)
-
         ) {
-            // API에서 받아온 데이터 표시
             dropdownItems.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
                     onClick = {
-                        selectedItem = item.title
+                        onItemSelected(item)  // 🔹 부모에서 상태 업데이트
                         expanded = false
                     }
                 )
@@ -281,6 +254,7 @@ fun HistoryDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier
         }
     }
 }
+
 
 @Composable
 fun OptionCard(history: GetHistoryResponse) {

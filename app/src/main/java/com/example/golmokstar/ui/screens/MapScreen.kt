@@ -45,6 +45,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -503,7 +504,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 fun MapDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
     val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
     var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
+    var selectedItem by remember { mutableStateOf(TripsDropdownResponse(0,"선택해주세요" ))} // 기본값
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -515,7 +516,7 @@ fun MapDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
             .background(White)
     ) {
         OutlinedTextField(
-            value = selectedItem,
+            value = selectedItem.title,
             onValueChange = {},
             readOnly = true,
             shape = RoundedCornerShape(12.dp),
@@ -550,7 +551,7 @@ fun MapDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
                 DropdownMenuItem(
                     text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
                     onClick = {
-                        selectedItem = item.title
+                        selectedItem = item
                         expanded = false
                     }
                 )
@@ -568,11 +569,17 @@ fun LocationItemList() {
         horizontalAlignment = Alignment.CenterHorizontally // 수평 정렬 중앙
     ) {
         // "찜한 장소" 항목
-        LocationItem(text = "찜한 장소", icon = { RedMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        LocationItem(text = "찜한 장소", icon = { RedMarkerIcon(modifier = Modifier
+            .size(25.dp)
+            .padding(start = 8.dp)) })
         // "방문 장소" 항목
-        LocationItem(text = "방문 장소", icon = { YellowMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        LocationItem(text = "방문 장소", icon = { YellowMarkerIcon(modifier = Modifier
+            .size(25.dp)
+            .padding(start = 8.dp)) })
         // "기록 장소" 항목
-        LocationItem(text = "기록 장소", icon = { BlueMarkerIcon(modifier = Modifier.size(25.dp).padding(start = 8.dp)) })
+        LocationItem(text = "기록 장소", icon = { BlueMarkerIcon(modifier = Modifier
+            .size(25.dp)
+            .padding(start = 8.dp)) })
     }
 }
 

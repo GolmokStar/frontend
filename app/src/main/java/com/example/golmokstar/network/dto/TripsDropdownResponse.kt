@@ -8,3 +8,4 @@ data class TripsDropdownResponse(
 data class ApiResponse(
     val trips: List<TripsDropdownResponse> // trips는 리스트입니다.
 )
+

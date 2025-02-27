@@ -12,6 +12,7 @@ import com.example.golmokstar.network.dto.GetTravelResponse
 import com.example.golmokstar.network.dto.CreateTravelRequest
 import com.example.golmokstar.network.dto.CreateTravelResponse
 import com.example.golmokstar.network.dto.GetHistoryResponse
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.utils.formatToDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,6 +68,15 @@ class TravelViewModel @Inject constructor(
     private val _historyList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())
     val historyList: StateFlow<List<GetHistoryResponse>> = _historyList
 
+    private val _currentTripList = MutableStateFlow<TripsDropdownResponse>(TripsDropdownResponse(0, "선택해주세요"))
+    val currentTripList: StateFlow<TripsDropdownResponse> = _currentTripList
+
+
+    fun updateSelectedTrip(newItem: TripsDropdownResponse) {
+        _currentTripList.value = newItem
+        getHistory(newItem.tripId.toString()) // 선택한 여행에 따라 히스토리 갱신
+        Log.d("currentTripList", currentTripList.value.toString())
+    }
 
     suspend fun getCurrentTravel() {
         try {
