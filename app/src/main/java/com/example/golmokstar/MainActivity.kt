@@ -21,6 +21,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     @Inject
     lateinit var authApiService: AuthApiService // ✅ Hilt에서 자동 주입
 

@@ -1,5 +1,6 @@
 package com.example.golmokstar.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,74 +37,79 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.golmokstar.R
-import com.example.golmokstar.ui.screens.Error
-import com.example.golmokstar.ui.screens.TravelPlan
-import com.example.golmokstar.ui.screens.TravelState
+import com.example.golmokstar.ui.screens.ClickableLink
+import com.example.golmokstar.ui.screens.Section
+import com.example.golmokstar.ui.screens.SelectFriends
 import com.example.golmokstar.ui.theme.AppTypography
+import com.example.golmokstar.ui.theme.BackgroundSky
+import com.example.golmokstar.ui.theme.ErrorRed
 import com.example.golmokstar.ui.theme.IconGray
 import com.example.golmokstar.ui.theme.MainNavy
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
+import com.example.golmokstar.viewmodel.Travel
+import com.example.golmokstar.viewmodel.TravelState
+import com.example.golmokstar.viewmodel.Error
 
-
-@Preview
-@Composable
-fun Screen() {
-    var nickname by remember { mutableStateOf("") }
-    var birthdate by remember { mutableStateOf("") }
-
-    var travelPlan by remember {
-        mutableStateOf(
-            TravelPlan(title = "", startDate = "", endDate = "")
-        )
-    }
-
-    var currentState by remember { mutableStateOf(TravelState.NONE) }
-
-    var currentError by remember { mutableStateOf(Error.NONE)}
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(White)
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
-    ) {
-        NickNameTextField(nickname, onChange = { nickname = it })
-        BirthdateField(birthdate, onChange = { birthdate = it })
-        TravelTitleField(
-            travelPlan.title,
-            onChange = { travelPlan = travelPlan.copy(title = it) },
-            currentState,
-            changeTravelState = { state ->
-                when (state) {
-                    TravelState.SETTING -> currentState = state
-                    TravelState.TRAVELING ->
-                        if (travelPlan.title.isNotEmpty() && travelPlan.startDate.isNotEmpty() && travelPlan.endDate.isNotEmpty()) {
-                            currentError = Error.NONE
-                            currentState = state
-                        } else if (travelPlan.title.isEmpty() && (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty())) {
-                            currentError = Error.Both
-                        } else if(travelPlan.title.isEmpty()) {
-                            currentError = Error.Title
-                        } else if (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty()) {
-                            currentError = Error.Date
-                        }
-
-                    else -> {}
-                }
-            },
-        )
-        TravelDateField(travelPlan.startDate, onChange = {travelPlan = travelPlan.copy(startDate = it)})
-        TravelDateField(travelPlan.endDate, onChange = {travelPlan = travelPlan.copy(endDate = it)})
-
-        Text(travelPlan.title)
-        Text(travelPlan.startDate)
-        Text(travelPlan.endDate)
-        Text(currentState.toString())
-        Text(currentError.toString())
-    }
-}
+//
+//@Preview
+//@Composable
+//fun Screen() {
+//    var nickname by remember { mutableStateOf("") }
+//    var birthdate by remember { mutableStateOf("") }
+//
+//    var travelPlan by remember {
+//        mutableStateOf(
+//            TravelPlan(title = "", startDate = "", endDate = "")
+//        )
+//    }
+//
+//    var currentState by remember { mutableStateOf(TravelState.NONE) }
+//
+//    var currentError by remember { mutableStateOf(Error.NONE)}
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(White)
+//            .padding(20.dp),
+//        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+//    ) {
+//        NickNameTextField(nickname, onChange = { nickname = it })
+//        BirthdateField(birthdate, onChange = { birthdate = it })
+//        TravelTitleField(
+//            travelPlan.title,
+//            onChange = { travelPlan = travelPlan.copy(title = it) },
+//            currentState,
+//            changeTravelState = { state ->
+//                when (state) {
+//                    TravelState.SETTING -> currentState = state
+//                    TravelState.TRAVELING ->
+//                        if (travelPlan.title.isNotEmpty() && travelPlan.startDate.isNotEmpty() && travelPlan.endDate.isNotEmpty()) {
+//                            currentError = Error.NONE
+//                            currentState = state
+//                        } else if (travelPlan.title.isEmpty() && (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty())) {
+//                            currentError = Error.Both
+//                        } else if(travelPlan.title.isEmpty()) {
+//                            currentError = Error.Title
+//                        } else if (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty()) {
+//                            currentError = Error.Date
+//                        }
+//
+//                    else -> {}
+//                }
+//            },
+//        )
+//        TravelDateField(travelPlan.startDate, onChange = {travelPlan = travelPlan.copy(startDate = it)})
+//        TravelDateField(travelPlan.endDate, onChange = {travelPlan = travelPlan.copy(endDate = it)})
+//
+//        Text(travelPlan.title)
+//        Text(travelPlan.startDate)
+//        Text(travelPlan.endDate)
+//        Text(currentState.toString())
+//        Text(currentError.toString())
+//    }
+//}
 
 
 @Composable
@@ -203,15 +209,18 @@ fun BirthdateField(birthdate: String, onChange: (String) -> Unit) {
 
 @Composable
 fun TravelTitleField(
-    travelTitle: String,
+    travel:  Travel,
     onChange: (String) -> Unit,
+    onChangeStartDate : (String) -> Unit,
+    onChangeEndDate : (String) -> Unit,
     currentState: TravelState,
-    changeTravelState: (TravelState) -> Unit,
+    changeTravelState: () -> Unit,
+    currentError : Error
 ) {
     val focusRequester = remember { FocusRequester() }
 
     BasicTextField(
-        value = travelTitle,
+        value = travel.title,
         onValueChange = { new ->
             if (new.length <= 8) {
                 onChange(new)
@@ -223,7 +232,7 @@ fun TravelTitleField(
             .focusRequester(focusRequester) // 포커스를 감지하기 위한 FocusRequester 적용
             .onFocusChanged { focusState ->
                 if (focusState.isFocused && currentState == TravelState.NONE) { // 포커스 된 경우 true
-                    changeTravelState(TravelState.SETTING)
+                    changeTravelState()
                 }
             }.zIndex(1f),
         decorationBox = { innerTextField ->
@@ -241,7 +250,7 @@ fun TravelTitleField(
                     modifier = Modifier.weight(1f), // 입력 필드 확장
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (travelTitle.isEmpty()) {
+                    if (travel.title.isEmpty()) {
                         Text(
                             "이번 여행의 제목은 무엇인가요?",
                             color = TextDarkGray,
@@ -270,35 +279,142 @@ fun TravelTitleField(
                     thickness = 1.dp,
                     color = TextDarkGray
                 )
-                if(currentState != TravelState.TRAVELING) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Date",
-                        tint = IconGray,
+                when (currentState) {
+                    TravelState.TRAVELING -> {
+                        Log.e("state", currentState.toString())
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.setting_icon),
+                            contentDescription = "Setting",
+                            tint = IconGray,
 
-                        modifier = Modifier.clickable {
-                            if (currentState == TravelState.SETTING) {
-                                changeTravelState(TravelState.TRAVELING) // 상태가 SETTING일 때만 여행 시작 가능
+                            modifier = Modifier.clickable {
+                                changeTravelState()
                             }
-                        }
-                    )
-                }
-                else {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.setting_icon),
-                        contentDescription = "Setting",
-                        tint = IconGray,
+                        )
+                    }
 
-                        modifier = Modifier.clickable {
-                            if (currentState == TravelState.TRAVELING) {
-                                changeTravelState(TravelState.SETTING) // 상태가 SETTING일 때만 여행 시작 가능
+                    TravelState.SETTING -> {
+                        Log.e("state", currentState.toString())
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Date",
+                            tint = IconGray,
+
+                            modifier = Modifier.clickable {
+                                Log.e("state", currentState.toString())
+                                changeTravelState()
                             }
-                        }
-                    )
+                        )
+                    }
+
+                    TravelState.NONE -> {
+                        Log.e("state", currentState.toString())
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Date",
+                            tint = IconGray,
+
+                            modifier = Modifier.clickable {
+                                Log.e("state", currentState.toString())
+                                changeTravelState()
+                            }
+                        )
+                    }
                 }
             }
         }
     )
+    if (currentState == TravelState.SETTING) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-20).dp)
+                .zIndex(0f), verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        BackgroundSky,
+                        shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)
+                    )
+                    .padding(vertical = 20.dp)
+            ) {
+                Section(firstComponent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "시작",
+                            color = TextDarkGray,
+                            style = AppTypography.labelMedium
+                        )
+                        Text(
+                            text = "종료",
+                            color = TextDarkGray,
+                            style = AppTypography.labelMedium
+                        )
+                    }
+                }, secondComponent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TravelDateField(travel.startDate, onChange = onChangeStartDate)
+                        TravelDateField(travel.endDate, onChange = onChangeEndDate)
+                    }
+                }, padding = 10
+                )
+
+                Section(firstComponent = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "함께하는 친구",
+                            color = TextDarkGray,
+                            style = AppTypography.labelMedium
+                        )
+                        ClickableLink()
+                    }
+                }, secondComponent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        SelectFriends()
+                    }
+                }, padding = 0
+                )
+            }
+            when (currentError) {
+                Error.Both -> Text(
+                    text = "* 제목, 날짜를 입력해주세요",
+                    color = ErrorRed,
+                    style = AppTypography.labelSmall
+                )
+
+                Error.Title -> Text(
+                    text = "* 제목을 입력해주세요",
+                    color = ErrorRed,
+                    style = AppTypography.labelSmall
+                )
+
+                Error.Date -> Text(
+                    text = "* 날짜를 입력해주세요",
+                    color = ErrorRed,
+                    style = AppTypography.labelSmall
+                )
+                else -> {}
+
+            }
+        }
+    }
 }
 
 

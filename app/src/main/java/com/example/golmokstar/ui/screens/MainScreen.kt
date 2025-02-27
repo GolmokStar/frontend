@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -12,9 +13,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.golmokstar.navigation.BottomNavigationBar
 import com.example.golmokstar.navigation.BottomNavItem
+import com.example.golmokstar.viewmodel.TravelViewModel
 
 @Composable
-fun MainScreen() {
+fun MainScreen(travelViewModel: TravelViewModel = hiltViewModel()) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -27,7 +29,9 @@ fun MainScreen() {
             startDestination = BottomNavItem.HomeScreen.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.HomeScreen.route) {HomeScreen()}
+            composable(BottomNavItem.HomeScreen.route) {
+                HomeScreen(travelViewModel = travelViewModel) // ✅ ViewModel 전달
+            }
             composable(BottomNavItem.CalendarScreen.route) { CalendarScreen(navController) }
             composable(BottomNavItem.MapScreen.route) { MapScreen() }
             composable(BottomNavItem.HistoryScreen.route) { HistoryScreen() }
