@@ -29,4 +29,7 @@ interface TravelApiService {
 
     @GET("record/recent")
     suspend fun getRecentHistory() : Response<List<GetHistoryResponse>>
+
+    @GET("record/history/travel/{tripId}")
+    suspend fun getHistory(@Path("tripId") tripId: String) : Response<List<GetHistoryResponse>>
 }

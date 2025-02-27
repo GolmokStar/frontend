@@ -102,7 +102,6 @@ fun HomeScreen(travelViewModel: TravelViewModel) {
 
     val scrollState = rememberScrollState()
 
-    val count = 1
 
     val travelState by travelViewModel.travelState.collectAsState()
     val currentTravel by travelViewModel.currentTravel.collectAsState()

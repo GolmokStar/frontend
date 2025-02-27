@@ -56,9 +56,6 @@ class TravelViewModel @Inject constructor(
     private val _currentTravel = MutableStateFlow<Travel?>(null)
     val currentTravel: StateFlow<Travel?> = _currentTravel
 
-    private val _historyList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())  // ✅ 리스트로 변경
-    val historyList: StateFlow<List<GetHistoryResponse>> = _historyList  // ✅ 리스트로 변경
-
 
     private val _currentError = MutableStateFlow(Error.NONE)
     val currentError: StateFlow<Error> = _currentError
@@ -67,6 +64,8 @@ class TravelViewModel @Inject constructor(
     private val _recentHistoryList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())
     val recentHistoryList: StateFlow<List<GetHistoryResponse>> = _recentHistoryList
 
+    private val _historyList = MutableStateFlow<List<GetHistoryResponse>>(emptyList())
+    val historyList: StateFlow<List<GetHistoryResponse>> = _historyList
 
 
     suspend fun getCurrentTravel() {
@@ -224,6 +223,25 @@ class TravelViewModel @Inject constructor(
                         _recentHistoryList.value = historyResponse  // ✅ 리스트를 직접 저장
                     } ?: run {
                         _recentHistoryList.value = emptyList()
+                    }
+                } else {
+                    Log.e("서버 응답 오류","${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("네트워크 요청 실패", " ${e.message}")
+            }
+        }
+    }
+
+    fun getHistory(tripId : String) {
+        viewModelScope.launch {
+            try {
+                val response = travelApiService.getHistory(tripId)
+                if (response.isSuccessful) {
+                    response.body()?.let { historyResponse ->
+                        _historyList.value = historyResponse  // ✅ 리스트를 직접 저장
+                    } ?: run {
+                        _historyList.value = emptyList()
                     }
                 } else {
                     Log.e("서버 응답 오류","${response.code()} - ${response.message()}")

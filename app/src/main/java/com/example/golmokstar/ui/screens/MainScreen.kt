@@ -34,7 +34,7 @@ fun MainScreen(travelViewModel: TravelViewModel = hiltViewModel()) {
             }
             composable(BottomNavItem.CalendarScreen.route) { CalendarScreen(navController) }
             composable(BottomNavItem.MapScreen.route) { MapScreen() }
-            composable(BottomNavItem.HistoryScreen.route) { HistoryScreen() }
+            composable(BottomNavItem.HistoryScreen.route) { HistoryScreen(travelViewModel = travelViewModel) }
             composable(BottomNavItem.MyPageScreen.route) { MyPageScreen() }
         }
     }
