@@ -7,7 +7,6 @@ import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import com.example.golmokstar.network.AuthApiService
-import com.example.golmokstar.network.RetrofitClient
 import com.google.android.gms.auth.api.identity.SignInClient
 import kotlinx.coroutines.tasks.await
 import com.example.golmokstar.BuildConfig
@@ -32,8 +31,12 @@ class GoogleAuthViewModel @Inject constructor(
 ) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val signInClient: SignInClient = GoogleAuthUtils.getGoogleSignInClient(context)
-    private val authService: AuthApiService = RetrofitClient.authApiService
     private val serverClientId: String = BuildConfig.GOOGLE_CLIENT_ID
+
+
+
+    @Inject
+    lateinit var authApiService: AuthApiService // ✅ Hilt에서 자동 주입
 
     //Log.e("serverClientId", serverClientId)
 
@@ -59,7 +62,7 @@ class GoogleAuthViewModel @Inject constructor(
     suspend fun sendTokenToServer(idToken: String): Pair<Int, Any?> {
         return try {
             Log.e("idToken", idToken)
-            val response: Response<Any> = authService.sendGoogleToken(GoogleTokenRequest(idToken))
+            val response: Response<Any> = authApiService.sendGoogleToken(GoogleTokenRequest(idToken))
             Log.e("response", response.toString())
 
             val responseBodyString = Gson().toJson(response.body()) // ✅ JSON 문자열로 변환
