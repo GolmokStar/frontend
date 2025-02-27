@@ -125,6 +125,7 @@ dependencies {
     // Places API
     implementation("com.google.android.libraries.places:places:4.1.0")
     implementation("com.android.volley:volley:1.2.1")
+    implementation ("androidx.compose.runtime:runtime-livedata:1.1.0") // LiveData와 Compose 연동을 위한 의존성 추가
 
 
 }

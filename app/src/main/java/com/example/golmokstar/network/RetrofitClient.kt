@@ -87,20 +87,10 @@ object NetworkModule {
         return retrofit.create(TravelApiService::class.java)
     }
 
-    val mapPinFavoredAPI: MapPinApiService by lazy {
-        retrofit.create(MapPinApiService::class.java)
-    }
-
-    val mapPinVisitAPI: MapPinApiService by lazy {
-        retrofit.create(MapPinApiService::class.java)
-    }
-
-    val mapPinRecordAPI: MapPinApiService by lazy {
-        retrofit.create(MapPinApiService::class.java)
-    }
-
-    val mapPinApi: MapPinApiService by lazy {
-        retrofit.create(MapPinApiService::class.java)
+    @Provides
+    @Singleton
+    fun provideMapPinAPI(retrofit: Retrofit): MapPinApiService {
+        return retrofit.create(MapPinApiService::class.java)
     }
 
 }

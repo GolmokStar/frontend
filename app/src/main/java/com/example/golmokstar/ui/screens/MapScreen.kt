@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -41,6 +43,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,15 +57,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.example.golmokstar.R
-import com.example.golmokstar.network.MapViewModel
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinRecordRequest
 import com.example.golmokstar.network.dto.MapPinVisitRequest
+import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.ui.components.BlueBox
 import com.example.golmokstar.ui.components.BlueMarkerIcon
 import com.example.golmokstar.ui.components.CustomButton
@@ -85,6 +89,7 @@ import com.example.golmokstar.ui.theme.MarkerRed
 import com.example.golmokstar.ui.theme.MarkerYellow
 import com.example.golmokstar.ui.theme.TextDarkGray
 import com.example.golmokstar.ui.theme.White
+import com.example.golmokstar.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -102,14 +107,12 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
-fun MapScreen() {
+fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
+    TripDropdownScreen(viewModel = viewModel)
+
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     val activity = context as? Activity
-
-    var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf("전체") }
-    val items = listOf("옵션 1", "옵션 2", "옵션 3")
 
     var currentLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var savedLatitude by remember { mutableDoubleStateOf(0.0) }
@@ -130,8 +133,6 @@ fun MapScreen() {
     var selectedLat by remember { mutableStateOf(0.0) }
     var selectedLng by remember { mutableStateOf(0.0) }
     var selectedId by remember { mutableStateOf("") }
-
-    val mapViewModel: MapViewModel = viewModel()
 
     // 박스 상태 및 색상 변경 함수
     fun changeBoxState(newState: String, newColor: Color) {
@@ -321,7 +322,7 @@ fun MapScreen() {
                             MarkerYellow -> yellowMarkerPin(context)
                             MarkerBlue -> blueMarkerPin(context)
                             MainNavy -> navyMarkerPin(context)
-                            else -> navyMarkerPin(context) // 기본 색상으로 처리
+                            else -> navyMarkerPin(context)
                         }
                     )
                 }
@@ -360,17 +361,17 @@ fun MapScreen() {
                                 onButtonClick = {
 
                                     val mapPinVisitRequest = MapPinVisitRequest(
-                                        tripId = "1",  // 예시로 tripId를 설정
+                                        tripId = 19,  // 예시로 tripId를 설정
                                         googlePlaceId = selectedId,
                                         placeName = selectedName,
                                         latitude = selectedLat,
                                         longitude = selectedLng,
                                         deviceLatitude = currentLocation.latitude,
                                         deviceLongitude = currentLocation.longitude,
-                                        pinType = selectedTypes
+                                        pinType = "VISITED_PENDING"
                                     )
 
-                                    mapViewModel.visitPin(mapPinVisitRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
+                                    viewModel.visitApi(mapPinVisitRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
 
                                     // RedBox 버튼 클릭 시 YellowBox로 전환
                                     changeBoxState("Yellow", MarkerYellow)
@@ -386,11 +387,11 @@ fun MapScreen() {
                                 onButtonClick = {
 
                                     val mapPinRecordRequest = MapPinRecordRequest(
-                                        pinId = "1",
-                                        pinType = selectedTypes
+                                        pinId = 1,
+                                        pinType = "RECORDED"
                                     )
 
-                                    mapViewModel.recordPin(mapPinRecordRequest)
+                                    viewModel.recordApi(mapPinRecordRequest)
 
                                     // YellowBox 버튼 클릭 시 BlueBox로 전환
                                     changeBoxState("Blue", MarkerBlue)
@@ -417,18 +418,18 @@ fun MapScreen() {
                                 onButtonClick = {
 
                                     val mapPinVisitRequest = MapPinVisitRequest(
-                                        tripId = "1",
+                                        tripId = 19,
                                         googlePlaceId = selectedId,
                                         placeName = selectedName,
                                         latitude = selectedLat,
                                         longitude = selectedLng,
                                         deviceLatitude = currentLocation.latitude,
                                         deviceLongitude = currentLocation.longitude,
-                                        pinType = selectedTypes  // 찜하기로 설정
+                                        pinType = "VISITED_PENDING"  // 찜하기로 설정
                                     )
 
                                     // ViewModel을 통해 API 호출
-                                    mapViewModel.visitPin(mapPinVisitRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
+                                    viewModel.visitApi(mapPinVisitRequest)
 
                                     changeBoxState("Yellow", MarkerYellow)
                                 },
@@ -440,16 +441,16 @@ fun MapScreen() {
                                     CustomButton {
                                         // MapPinFavoredRequest 객체 생성
                                         val mapPinFavoredRequest = MapPinFavoredRequest(
-                                            tripId = "1",  // 예시로 tripId를 설정
+                                            tripId = 19,  // 예시로 tripId를 설정
                                             googlePlaceId = selectedId,
                                             placeName = selectedName,
                                             latitude = selectedLat,   // 예시로 가정한 변수
                                             longitude = selectedLng,  // 예시로 가정한 변수
-                                            pinType = selectedTypes  // 찜하기로 설정
+                                            pinType = "FAVORED"  // 찜하기로 설정
                                         )
 
                                         // ViewModel을 통해 API 호출
-                                        mapViewModel.favoredPin(mapPinFavoredRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
+                                        viewModel.favoredApi(mapPinFavoredRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
 
                                         // 상태 변경 (changeBoxState 함수)
                                         changeBoxState("Red", MarkerRed)
@@ -479,14 +480,11 @@ fun MapScreen() {
 
             // 상단 왼쪽에 드롭다운 배치
             Box(modifier = Modifier.fillMaxSize()) {
-                // 드롭다운 컴포넌트 사용
-                DropdownMenuWithIcon(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                    selectedItem = selectedItem,
-                    onItemSelected = { selectedItem = it },
-                    items = items,
-                    modifier = Modifier.align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
+                TripDropdownScreen(
+                    viewModel = viewModel(), // ViewModel 전달
+                    modifier = Modifier
+                        .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
+                        .padding(16.dp) // 드롭다운 위치 조정 (선택 사항)
                 )
             }
         }
@@ -495,70 +493,59 @@ fun MapScreen() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropdownMenuWithIcon(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    selectedItem: String,
-    onItemSelected: (String) -> Unit,
-    items: List<String>,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
-            modifier = Modifier
-                .padding(16.dp)
-                .width(180.dp)
-                .height(50.dp)
-        ) {
-            OutlinedTextField(
-                value = selectedItem,
-                onValueChange = {}, // 값 변경 불가능하게 설정
-                readOnly = true, // 읽기 전용으로 설정
-                shape = RoundedCornerShape(12.dp),
-                trailingIcon = {
-                    // 아이콘 클릭 시 드롭다운 열리거나 닫히게 함
-                    IconButton(onClick = { onExpandedChange(!expanded) }) {
-                        Icon(
-                            imageVector =
-                                if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
-                                else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
-                            contentDescription = "드롭다운 열기",
-                            tint = IconGray
-                        )
-                    }
-                },
-                modifier = Modifier.menuAnchor(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = White,
-                    focusedBorderColor = IconGray,
-                    unfocusedBorderColor = IconGray,
-                    focusedTextColor = TextDarkGray,
-                    unfocusedTextColor = TextDarkGray
-                ),
-                textStyle = AppTypography.bodyMedium
-            )
+fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
+    val dropdownItems = listOf("전체", "옵션 1", "옵션 2") // 드롭다운 항목 리스트
+    var expanded by remember { mutableStateOf(false) } // 드롭다운 열기/닫기 상태 관리
+    var selectedItem by remember { mutableStateOf("전체") } // 선택된 항목 관리, 기본값을 "전체"로 설정
 
-            // 드롭다운 메뉴
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { onExpandedChange(false) }, // 드롭다운 외부 클릭 시 닫히게 함
-                modifier = Modifier.background(White)
-            ) {
-                items.forEach { item ->
-                    DropdownMenuItem(
-                        text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
-                        onClick = {
-                            onItemSelected(item) // 아이템 클릭 시 선택된 아이템 설정
-                            onExpandedChange(false) // 드롭다운 닫기
-                        }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }, // 드롭다운 상태 변경
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedItem, // selectedItem을 String으로 설정
+            onValueChange = { selectedItem = it }, // 선택된 항목 업데이트
+            readOnly = true, // 읽기 전용
+            shape = RoundedCornerShape(12.dp),
+            trailingIcon = {
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
+                        else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
+                        contentDescription = "Toggle dropdown"
                     )
                 }
-            }
+            },
+            interactionSource = remember { MutableInteractionSource() } // interactionSource 설정
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+//            dropdownItems.forEach { item ->
+//                DropdownMenuItem(
+//                    onClick = {
+//                        selectedItem = item // 선택된 항목 업데이트
+//                        expanded = false // 드롭다운 닫기
+//                        Log.d("Dropdown", "Selected item: $item")
+//
+//                        // "전체" 항목이 클릭되었을 때 mapPinApi 호출
+//                        if (item == "전체") {
+//                            viewModel.mapPinApi() // 여기에 원하는 API 호출
+//                        }
+//                    },
+//                    interactionSource = remember { MutableInteractionSource() } // interactionSource 전달
+//                ) {
+//                    // Text에서 'item'을 text로 전달
+//                    Text(text = item)
+//                }
+//            }
         }
     }
 }
+
 
 // 위치 목록 UI 컴포넌트
 @Composable
