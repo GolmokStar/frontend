@@ -55,7 +55,7 @@ fun SignUpScreen(navController: NavController, authApiService: AuthApiService,  
         // 닉네임 입력
         LabelWithAsterisk("닉네임", Modifier.align(Alignment.Start) )
         NickNameTextField(nickname, onChange = { nickname = it })
-        InfoBox("닉네임은 2~6글자로 설정 가능합니다")
+        InfoBox("닉네임은 2~8글자로 설정 가능합니다")
         Spacer(modifier = Modifier.padding(4.dp))
 
         // 성별 선택

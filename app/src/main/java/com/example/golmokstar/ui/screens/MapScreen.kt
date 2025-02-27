@@ -109,7 +109,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
-    TripDropdownScreen(viewModel = viewModel)
+    MapDropdownScreen(viewModel = viewModel)
 
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
@@ -487,7 +487,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 
             // 상단 왼쪽에 드롭다운 배치
             Box(modifier = Modifier.fillMaxSize()) {
-                TripDropdownScreen(
+                MapDropdownScreen(
                     viewModel = viewModel(), // ViewModel 전달
                     modifier = Modifier
                         .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
@@ -500,7 +500,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
+fun MapDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
     val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값

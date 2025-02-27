@@ -256,7 +256,7 @@ fun ProfileBox(travelCount: Int = 0) {
                             BasicTextField(
                                 value = userName,
                                 onValueChange = { newValue ->
-                                    val filteredText = newValue.take(6) // 6글자 제한
+                                    val filteredText = newValue.filter { it.isLetter() }.take(8) // 8글자 제한
                                     userName = filteredText
                                 },
                                 textStyle = AppTypography.bodyMedium,
@@ -456,7 +456,7 @@ fun ProfileBox(travelCount: Int = 0) {
                                 Toast.makeText(context, "여행 스타일을 1개 이상 선택해야 합니다.", Toast.LENGTH_SHORT).show()
                             }
                         } else {
-                            Toast.makeText(context, "닉네임은 2~6글자로 설정 가능합니다.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "닉네임은 2~8글자로 설정 가능합니다.", Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         isEditingProfile = true
@@ -477,7 +477,7 @@ fun ProfileBox(travelCount: Int = 0) {
         Spacer(modifier = Modifier.height(8.dp)) // 간격 조정
         if (userName.length <= 1) {
             Text(
-                text = "* 닉네임을 입력해주세요. 2~6글자로 설정 가능합니다.",
+                text = "* 닉네임을 입력해주세요. 2~8글자로 설정 가능합니다.",
                 style = AppTypography.labelSmall,
                 color = ErrorRed,
                 modifier = Modifier

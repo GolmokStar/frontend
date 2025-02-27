@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.R
 import com.example.golmokstar.network.dto.GetHistoryResponse
 import com.example.golmokstar.ui.components.NavyBox
@@ -72,6 +75,7 @@ import com.example.golmokstar.ui.theme.TextLightGray
 import com.example.golmokstar.ui.theme.White
 import com.example.golmokstar.viewmodel.Travel
 import com.example.golmokstar.viewmodel.TravelViewModel
+import com.example.golmokstar.viewmodel.MapViewModel
 
 data class Sampledata(
     val name: String,
@@ -134,11 +138,15 @@ val samplehistorydata = listOf(
 )
 
 @Composable
-fun HistoryScreen(travelViewModel: TravelViewModel) {
+fun HistoryScreen(travelViewModel: TravelViewModel,
+    mapViewModel: MapViewModel = hiltViewModel()) {
     var expanded by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf("전체") }
-
     var showDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.dropdownApi()
+    }
 
 
     val historyList by travelViewModel.recentHistoryList.collectAsState()
@@ -162,14 +170,17 @@ fun HistoryScreen(travelViewModel: TravelViewModel) {
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
-            // 드롭다운 메뉴
-            DropdownMenuSection(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                selectedItem = selectedItem,
-                onItemSelect = { selectedItem = it },
-                modifier = Modifier.width(180.dp).height(50.dp)
-            )
+
+            // 상단 왼쪽에 드롭다운 배치
+            Box(modifier = Modifier.fillMaxSize()) {
+                MapDropdownScreen(
+                    viewModel = viewModel(), // ViewModel 전달
+                    modifier = Modifier
+                        .align(Alignment.TopStart) // 드롭다운 위치를 Box 내에서 제어
+
+                )
+            }
+
             Spacer(modifier = Modifier.height(25.dp))
         }
 
@@ -212,19 +223,19 @@ fun HistoryScreen(travelViewModel: TravelViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropdownMenuSection(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    selectedItem: String,
-    onItemSelect: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val items = listOf("전체", "옵션 1", "옵션 2", "옵션 3")
+fun HistoryDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
+    val dropdownItems by viewModel.dropdownItems.observeAsState(initial = emptyList()) // API 데이터 옵저빙
+    var expanded by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf("선택해주세요") } // 기본값
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        modifier = modifier
+        onExpandedChange = { expanded = it },
+        modifier = Modifier
+            .padding(16.dp)
+            .width(180.dp)
+            .height(50.dp)
+            .background(White)
     ) {
         OutlinedTextField(
             value = selectedItem,
@@ -232,47 +243,38 @@ fun DropdownMenuSection(
             readOnly = true,
             shape = RoundedCornerShape(12.dp),
             trailingIcon = {
-                IconButton(
-                    onClick = {
-                        onExpandedChange(!expanded)
-                    }
-                ) {
+                IconButton(onClick = { expanded = !expanded }) {
                     Icon(
-                        imageVector = if (expanded)
-                            ImageVector.vectorResource(id = R.drawable.arrow_drop_up_icon)
-                        else
-                            ImageVector.vectorResource(id = R.drawable.arrow_drop_down_icon),
-                        contentDescription = "드롭다운 열기",
-                        tint = IconGray
+                        imageVector = if (expanded) ImageVector.vectorResource(R.drawable.arrow_drop_up_icon)
+                        else ImageVector.vectorResource(R.drawable.arrow_drop_down_icon),
+                        contentDescription = "Toggle dropdown"
                     )
                 }
             },
             modifier = Modifier.menuAnchor(),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = White,
-                focusedBorderColor = IconGray,
-                unfocusedBorderColor = IconGray,
-                focusedTextColor = TextDarkGray,
-                unfocusedTextColor = TextDarkGray
-            ),
-            textStyle = AppTypography.bodyMedium,
+                unfocusedBorderColor = IconGray,  // 포커스가 없는 상태일 때 외곽선 색상
+                focusedBorderColor = IconGray,    // 포커스가 있는 상태일 때 외곽선 색상
+                focusedLabelColor = TextDarkGray,
+                unfocusedLabelColor = TextDarkGray
+            )
+
+
         )
 
-        // ExposedDropdownMenu
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = {
-                // 외부 클릭 시 드롭다운을 닫기
-                onExpandedChange(false)
-            },
+            onDismissRequest = { expanded = false },
             modifier = Modifier.background(White)
+
         ) {
-            items.forEach { item ->
+            // API에서 받아온 데이터 표시
+            dropdownItems.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(text = item, style = AppTypography.bodyMedium, color = TextDarkGray) },
+                    text = { Text(item.title, style = AppTypography.bodyMedium, color = TextDarkGray) },
                     onClick = {
-                        onItemSelect(item)
-                        onExpandedChange(false)
+                        selectedItem = item.title
+                        expanded = false
                     }
                 )
             }
