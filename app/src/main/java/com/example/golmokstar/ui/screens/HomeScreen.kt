@@ -26,13 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.zIndex
 import com.example.golmokstar.R
-import com.example.golmokstar.ui.components.TravelDateField
 import com.example.golmokstar.ui.components.TravelTitleField
 import com.example.golmokstar.ui.theme.*
+import com.example.golmokstar.viewmodel.Error
+import com.example.golmokstar.viewmodel.Travel
+import com.example.golmokstar.viewmodel.TravelState
+import com.example.golmokstar.viewmodel.TravelViewModel
 
 
 data class Place(
@@ -132,30 +133,24 @@ val sampleHistories = listOf(
     )
 )
 
+//
+//enum class TravelState {
+//    NONE, // 아무것도 아님
+//    SETTING, // 설정 중
+//    TRAVELING // 여행 중
+//}
+//
+//data class TravelPlan(
+//    val title: String, // 여행 제목 (필수)
+//    val startDate: String, // 시작 날짜 (필수, 예: "2025/06/01")
+//    val endDate: String, // 종료 날짜 (필수, 예: "2025/06/07")
+//    val friends: List<String> = emptyList() // 선택 요소: 친구 리스트 (기본값: 빈 리스트)
+//)
 
-enum class TravelState {
-    NONE, // 아무것도 아님
-    SETTING, // 설정 중
-    TRAVELING // 여행 중
-}
 
-data class TravelPlan(
-    val title: String, // 여행 제목 (필수)
-    val startDate: String, // 시작 날짜 (필수, 예: "2025/06/01")
-    val endDate: String, // 종료 날짜 (필수, 예: "2025/06/07")
-    val friends: List<String> = emptyList() // 선택 요소: 친구 리스트 (기본값: 빈 리스트)
-)
 
-enum class Error {
-    NONE, // 에러 없음
-    Title, // 제목 없음
-    Date, // 날짜 없음
-    Both, // 둘 다 없음
-}
-
-@Preview
 @Composable
-fun HomeScreen() {
+fun HomeScreen(travelViewModel: TravelViewModel) {
 
     // FocusManager 객체 생성
     val focusManager = LocalFocusManager.current
@@ -164,15 +159,31 @@ fun HomeScreen() {
 
     val count = 1
 
+    val travelState by travelViewModel.travelState.collectAsState()
+    val currentTravel by travelViewModel.currentTravel.collectAsState()
+    val currentError by travelViewModel.currentError.collectAsState()
+
     var travelPlan by remember {
         mutableStateOf(
-            TravelPlan(title = "", startDate = "", endDate = "")
+            Travel(id = "", title = "", startDate = "", endDate = "")
         )
     }
 
-    var currentState by remember { mutableStateOf(TravelState.NONE) }
+    LaunchedEffect(Unit) {
+        travelViewModel.getCurrentTravel()
+    }
 
-    var currentError by remember { mutableStateOf(Error.NONE) }
+    LaunchedEffect(currentTravel) {
+        currentTravel?.let {
+            travelPlan = Travel(
+                title = it.title,
+                startDate = it.startDate,
+                endDate = it.endDate
+            )
+        }
+    }
+
+
 
     Column(
         verticalArrangement = Arrangement.spacedBy(35.dp),
@@ -186,8 +197,7 @@ fun HomeScreen() {
                     // 화면의 빈 곳을 클릭하면 포커스를 해제
                     focusManager.clearFocus()
                     if (travelPlan.title.isEmpty()) {
-                        currentState = TravelState.NONE
-                        travelPlan = TravelPlan(title = "", startDate = "", endDate = "")
+                        //
                     }
                 })
             },
@@ -201,23 +211,12 @@ fun HomeScreen() {
                 onChangeTitle = { travelPlan = travelPlan.copy(title = it) },
                 onChangeStartDate = { travelPlan = travelPlan.copy(startDate = it) },
                 onChangeEndDate = { travelPlan = travelPlan.copy(endDate = it) },
-                currentState,
-                changeTravelState = { state ->
-                    when (state) {
-                        TravelState.SETTING -> currentState = state
-                        TravelState.TRAVELING ->
-                            if (travelPlan.title.isNotEmpty() && travelPlan.startDate.isNotEmpty() && travelPlan.endDate.isNotEmpty()) {
-                                currentError = Error.NONE
-                                currentState = state
-                            } else if (travelPlan.title.isEmpty() && (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty())) {
-                                currentError = Error.Both
-                            } else if (travelPlan.title.isEmpty()) {
-                                currentError = Error.Title
-                            } else if (travelPlan.startDate.isEmpty() || travelPlan.endDate.isEmpty()) {
-                                currentError = Error.Date
-                            }
-
-                        else -> {}
+                travelState,
+                changeTravelState = {
+                    if(travelState != TravelState.SETTING) {
+                        travelViewModel.validateAndSetTravelState()
+                    } else {
+                        travelViewModel.setTravel(travelPlan)
                     }
                 }, currentError
             )
@@ -268,106 +267,16 @@ fun Section(
 
 @Composable
 fun CreateTravelSection(
-    travelPlan: TravelPlan,
+    travelPlan: Travel,
     onChangeTitle: (String) -> Unit,
     onChangeStartDate: (String) -> Unit,
     onChangeEndDate: (String) -> Unit,
     currentState: TravelState,
-    changeTravelState: (TravelState) -> Unit,
-    currentError: Error
-) {
-    TravelTitleField(travelPlan.title, onChangeTitle, currentState, changeTravelState)
-    if (currentState == TravelState.SETTING) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-20).dp)
-                .zIndex(0f), verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        BackgroundSky,
-                        shape = RoundedCornerShape(bottomEnd = 10.dp, bottomStart = 10.dp)
-                    )
-                    .padding(vertical = 20.dp)
-            ) {
-                Section(firstComponent = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "시작",
-                            color = TextDarkGray,
-                            style = AppTypography.labelMedium
-                        )
-                        Text(
-                            text = "종료",
-                            color = TextDarkGray,
-                            style = AppTypography.labelMedium
-                        )
-                    }
-                }, secondComponent = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        TravelDateField(travelPlan.startDate, onChange = onChangeStartDate)
-                        TravelDateField(travelPlan.endDate, onChange = onChangeEndDate)
-                    }
-                }, padding = 10
-                )
+    changeTravelState: () -> Unit,
+    currentError: Error,
 
-                Section(firstComponent = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "함께하는 친구",
-                            color = TextDarkGray,
-                            style = AppTypography.labelMedium
-                        )
-                        ClickableLink()
-                    }
-                }, secondComponent = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        SelectFriends()
-                    }
-                }, padding = 0
-                )
-            }
-            when (currentError) {
-                Error.Both -> Text(
-                    text = "* 제목, 날짜를 입력해주세요",
-                    color = ErrorRed,
-                    style = AppTypography.labelSmall
-                )
-
-                Error.Title -> Text(
-                    text = "* 제목을 입력해주세요",
-                    color = ErrorRed,
-                    style = AppTypography.labelSmall
-                )
-
-                Error.Date -> Text(
-                    text = "* 날짜를 입력해주세요",
-                    color = ErrorRed,
-                    style = AppTypography.labelSmall
-                )
-                else -> {}
-
-            }
-        }
-    }
+    ) {
+    TravelTitleField(travelPlan, onChangeTitle, onChangeStartDate, onChangeEndDate, currentState, changeTravelState ,currentError)
 }
 
 

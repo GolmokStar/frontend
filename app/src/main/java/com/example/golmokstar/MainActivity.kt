@@ -12,14 +12,19 @@ import androidx.navigation.compose.rememberNavController
 import com.example.golmokstar.google.GoogleAuthViewModel
 import com.example.golmokstar.navigation.AppNavGraph
 import com.example.golmokstar.navigation.BottomNavigationBar
-import com.example.golmokstar.network.RetrofitClient
+import com.example.golmokstar.network.AuthApiService
 import com.example.golmokstar.ui.screens.AuthHomeScreen
 import com.example.golmokstar.ui.screens.MainScreen
 import com.example.golmokstar.ui.theme.GolmokStarTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var authApiService: AuthApiService // ✅ Hilt에서 자동 주입
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -30,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
                 val navController = rememberNavController()  // ✅ NavHostController 사용
                 val viewModel: GoogleAuthViewModel = hiltViewModel()
-                val authApiService = RetrofitClient.authApiService
+                //val authApiService = RetrofitClient.authApiService
 
                 //MainScreen(navController)
                 //AuthHomeScreen(viewModel, navController)
