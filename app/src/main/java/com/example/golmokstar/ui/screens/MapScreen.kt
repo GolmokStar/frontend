@@ -17,7 +17,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -68,7 +64,6 @@ import com.example.golmokstar.R
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinRecordRequest
 import com.example.golmokstar.network.dto.MapPinVisitRequest
-import com.example.golmokstar.network.dto.TripsDropdownResponse
 import com.example.golmokstar.ui.components.BlueBox
 import com.example.golmokstar.ui.components.BlueMarkerIcon
 import com.example.golmokstar.ui.components.CustomButton
@@ -112,6 +107,10 @@ import com.google.maps.android.compose.rememberCameraPositionState
 fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
     TripDropdownScreen(viewModel = viewModel)
 
+    val pinDataList by viewModel.pinDataList.observeAsState(emptyList())
+
+    val trippinDataList by viewModel.trippinDataList.observeAsState(emptyList())
+
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     val activity = context as? Activity
@@ -131,15 +130,31 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
     var selectedName by remember { mutableStateOf("") }
     var selectedAddress by remember { mutableStateOf("") }
     var selectedTypes by remember { mutableStateOf("") }
+    var selectedTitles by remember { mutableStateOf<String?>(null) }
+    var selectedRating by remember { mutableStateOf<Double?>(null) }  // nullable Double로 설정
+    var selectedDate by remember { mutableStateOf("") }
     var selectedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var selectedLat by remember { mutableStateOf(0.0) }
     var selectedLng by remember { mutableStateOf(0.0) }
     var selectedId by remember { mutableStateOf("") }
 
+    // Observe placeRegisterResult with observeAsState
+    val placeRegisterResult by viewModel.placeRegisterResult.observeAsState("")
+
+
     LaunchedEffect(Unit) {
         viewModel.dropdownApi()
     }
 
+    LaunchedEffect(pinDataList) {
+        // 핀 데이터가 변경될 때마다 지도에 반영하도록 함
+    }
+
+    LaunchedEffect(placeRegisterResult) {
+        if (placeRegisterResult.isNotEmpty()) {
+            Toast.makeText(context, placeRegisterResult, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // 박스 상태 및 색상 변경 함수
     fun changeBoxState(newState: String, newColor: Color) {
@@ -310,6 +325,55 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                     }
                 }
             ) {
+
+                pinDataList.forEach { pin ->
+                    pinDataList.forEach { pin ->
+                        // pinType에 따른 색상 또는 마커 아이콘 지정
+                        val markerIcon = when (pin.pinType ?: "UNKNOWN") {  // pin.pinType이 null일 경우 "UNKNOWN"을 사용
+                            "VISITED_PENDING" -> yellowMarkerPin(context)
+                            "RECORDED" -> blueMarkerPin(context)
+                            "FAVORED" -> redMarkerPin(context)
+                            else -> navyMarkerPin(context)  // 기본 마커 아이콘 설정
+                        }
+
+                        selectedTitles = pin.tripName
+                        selectedRating = pin.rating
+                        selectedDate = pin.createdAt
+                        selectedName = pin.placeName
+
+                        // 마커 추가
+                        Marker(
+                            state = MarkerState(position = LatLng(pin.latitude, pin.longitude)),
+                            title = "선택한 위치",
+                            icon = markerIcon  // 색상 또는 커스텀 아이콘 적용
+                        )
+                    }
+                }
+
+//                trippinDataList.forEach{ pin ->
+//                    trippinDataList.forEach { pin ->
+//                        val markerIcon = when (pin.pin ?: "UNKNOWN") {  // pin.pinType이 null일 경우 "UNKNOWN"을 사용
+//                            "VISITED_PENDING" -> yellowMarkerPin(context)
+//                            "RECORDED" -> blueMarkerPin(context)
+//                            "FAVORED" -> redMarkerPin(context)
+//                            else -> navyMarkerPin(context)  // 기본 마커 아이콘 설정
+//                        }
+//
+//                        selectedTitles = pin.tripName
+//                        selectedRating = pin.rating
+//                        selectedDate = pin.createdAt
+//                        selectedName = pin.placeName
+//
+//                        // 마커 추가
+//                        Marker(
+//                            state = MarkerState(position = LatLng(pin.latitude, pin.longitude)),
+//                            title = "선택한 위치",
+//                            icon = markerIcon  // 색상 또는 커스텀 아이콘 적용
+//                        )
+//
+//                    }
+//                }
+
                 // 저장된 위도, 경도가 있으면 마커 표시
                 if (savedLatitude != 0.0 && savedLongitude != 0.0) {
                     Marker(
@@ -368,7 +432,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                 onButtonClick = {
 
                                     val mapPinVisitRequest = MapPinVisitRequest(
-                                        tripId = 19,  // 예시로 tripId를 설정
+                                        tripId = 18,  // 예시로 tripId를 설정
                                         googlePlaceId = selectedId,
                                         placeName = selectedName,
                                         latitude = selectedLat,
@@ -425,7 +489,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                 onButtonClick = {
 
                                     val mapPinVisitRequest = MapPinVisitRequest(
-                                        tripId = 19,
+                                        tripId = 18,
                                         googlePlaceId = selectedId,
                                         placeName = selectedName,
                                         latitude = selectedLat,
@@ -448,7 +512,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                     CustomButton {
                                         // MapPinFavoredRequest 객체 생성
                                         val mapPinFavoredRequest = MapPinFavoredRequest(
-                                            tripId = 19,  // 예시로 tripId를 설정
+                                            tripId = 18,  // 예시로 tripId를 설정
                                             googlePlaceId = selectedId,
                                             placeName = selectedName,
                                             placeType = selectedTypes,
@@ -456,6 +520,8 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                             longitude = selectedLng,  // 예시로 가정한 변수
                                             pinType = "FAVORED"  // 찜하기로 설정
                                         )
+
+
 
                                         // ViewModel을 통해 API 호출
                                         viewModel.favoredApi(mapPinFavoredRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.
@@ -536,8 +602,6 @@ fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
                 focusedLabelColor = TextDarkGray,
                 unfocusedLabelColor = TextDarkGray
             )
-
-
         )
 
         ExposedDropdownMenu(
@@ -553,6 +617,12 @@ fun TripDropdownScreen(viewModel: MapViewModel, modifier: Modifier = Modifier) {
                     onClick = {
                         selectedItem = item.title
                         expanded = false
+
+                        if (item.title == "전체 여행") {
+                            viewModel.mapPinApi()
+                        } else {
+                            viewModel.mapPinTripIdApi(item.tripId)
+                        }
                     }
                 )
             }
