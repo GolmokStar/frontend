@@ -66,7 +66,7 @@ class UserViewModel @Inject constructor(
 
                 createRequest(
                     requester = userInfo.value.friendCode,
-                    receiver = "4203"
+                    receiver = ""//"4203"
                 )
             }
         } catch (e: Exception) {
