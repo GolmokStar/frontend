@@ -352,65 +352,67 @@ fun CommonRow(history: GetHistoryResponse) {
 // 홈스크린 팝업 참고
 @Composable
 fun Report(onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = { onDismiss() }) {
+    var rating by remember { mutableFloatStateOf(0f) } // 현재 별점 상태
+
+    Dialog(onDismissRequest = {
+    }) {
         Box(
-            modifier = Modifier
-                .width(300.dp)
-                .height(580.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.White)
-                .padding(horizontal = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier
+                    .width(300.dp)
+                    .height(580.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White)
+                    .padding(horizontal = 10.dp),
+                contentAlignment = Alignment.Center
             ) {
-                TitleArea(onDismiss)
-
-                PhotoAdd()
-
-                Spacer(Modifier.height(5.dp))
-
-                // 별점을 위한 상태 관리
-                var rating by remember { mutableFloatStateOf(0f) } // 현재 별점 상태
-
-                // 별점 표시
-                StarRatingBar(
-                    onRatingChange = { newRating -> rating = newRating }, // 별점 변경 시 업데이트
-                    fullStar = R.drawable.fullstar_icon, // 가득 찬 별 아이콘
-                    halfStar = R.drawable.halfstar_icon, // 반쪽 별 아이콘
-                    emptyStar = R.drawable.emptystar_icon // 빈 별 아이콘
-                )
-
-                Spacer(Modifier.height(5.dp))
-
-                RecordContent()
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    horizontalArrangement = Arrangement.End
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Button(
-                        onClick = {},
+                    TitleArea(onDismiss)
+
+                    PhotoAdd()
+
+                    Spacer(Modifier.height(5.dp))
+
+                    // 별점 표시
+                    StarRatingBar(
+                        onRatingChange = { newRating -> rating = newRating }, // 별점 변경 시 업데이트
+                        fullStar = R.drawable.fullstar_icon, // 가득 찬 별 아이콘
+                        halfStar = R.drawable.halfstar_icon, // 반쪽 별 아이콘
+                        emptyStar = R.drawable.emptystar_icon // 빈 별 아이콘
+                    )
+
+                    Spacer(Modifier.height(5.dp))
+
+                    RecordContent()
+
+                    Row(
                         modifier = Modifier
-                            .width(88.dp)
-                            .height(35.dp),
-                        shape = RoundedCornerShape(5.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MainNavy,
-                        )
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        Text("완료", color = White, style = AppTypography.bodyMedium)
+                        Button(
+                            onClick = {if (rating > 0) {
+                                onDismiss() // 별점을 선택했을 때만 닫히게
+                            } },
+                            modifier = Modifier
+                                .width(88.dp)
+                                .height(35.dp),
+                            shape = RoundedCornerShape(5.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MainNavy,
+                            )
+                        ) {
+                            Text("완료", color = White, style = AppTypography.bodyMedium)
+                        }
                     }
                 }
             }
         }
-    }
 }
 
 @Composable
