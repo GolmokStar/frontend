@@ -209,8 +209,8 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                         val excludedTypes = setOf("point_of_interest", "establishment")
 
                         selectedTypes = (0 until placeTypes.length())
-                            .map { placeTypes.getString(it) }
-                            .firstOrNull { it !in excludedTypes } ?: "unknown"
+                            .map { placeTypes.getString(it).toUpperCase() }  // 대문자로 변환
+                            .firstOrNull { it !in excludedTypes } ?: "CAFE"  // 대문자 "UNKNOWN"으로 설정
 
                         Log.d("POIPlace", "정확한 주소: $selectedAddress")
                         Log.d("POIPlace", "장소 유형: $selectedTypes")
@@ -327,52 +327,47 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
             ) {
 
                 pinDataList.forEach { pin ->
-                    pinDataList.forEach { pin ->
-                        // pinType에 따른 색상 또는 마커 아이콘 지정
-                        val markerIcon = when (pin.pinType ?: "UNKNOWN") {  // pin.pinType이 null일 경우 "UNKNOWN"을 사용
-                            "VISITED_PENDING" -> yellowMarkerPin(context)
-                            "RECORDED" -> blueMarkerPin(context)
-                            "FAVORED" -> redMarkerPin(context)
-                            else -> navyMarkerPin(context)  // 기본 마커 아이콘 설정
-                        }
-
-                        selectedTitles = pin.tripName
-                        selectedRating = pin.rating
-                        selectedDate = pin.createdAt
-                        selectedName = pin.placeName
-
-                        // 마커 추가
-                        Marker(
-                            state = MarkerState(position = LatLng(pin.latitude, pin.longitude)),
-                            title = "선택한 위치",
-                            icon = markerIcon  // 색상 또는 커스텀 아이콘 적용
-                        )
+                    // pinType에 따른 색상 또는 마커 아이콘 지정
+                    val markerIcon = when (pin.pinType ?: "UNKNOWN") {
+                        "VISITED_PENDING" -> yellowMarkerPin(context)
+                        "RECORDED" -> blueMarkerPin(context)
+                        "FAVORED" -> redMarkerPin(context)
+                        else -> navyMarkerPin(context)
                     }
+
+                    selectedTitles = pin.tripName
+                    selectedRating = pin.rating
+                    selectedDate = pin.createdAt
+                    selectedName = pin.placeName
+
+                    // 마커 추가
+                    Marker(
+                        state = MarkerState(position = LatLng(pin.latitude, pin.longitude)),
+                        title = "선택한 위치",
+                        icon = markerIcon
+                    )
                 }
 
-//                trippinDataList.forEach{ pin ->
-//                    trippinDataList.forEach { pin ->
-//                        val markerIcon = when (pin.pin ?: "UNKNOWN") {  // pin.pinType이 null일 경우 "UNKNOWN"을 사용
-//                            "VISITED_PENDING" -> yellowMarkerPin(context)
-//                            "RECORDED" -> blueMarkerPin(context)
-//                            "FAVORED" -> redMarkerPin(context)
-//                            else -> navyMarkerPin(context)  // 기본 마커 아이콘 설정
-//                        }
-//
-//                        selectedTitles = pin.tripName
-//                        selectedRating = pin.rating
-//                        selectedDate = pin.createdAt
-//                        selectedName = pin.placeName
-//
-//                        // 마커 추가
-//                        Marker(
-//                            state = MarkerState(position = LatLng(pin.latitude, pin.longitude)),
-//                            title = "선택한 위치",
-//                            icon = markerIcon  // 색상 또는 커스텀 아이콘 적용
-//                        )
-//
-//                    }
-//                }
+                trippinDataList.forEach { pin ->
+                    val markerIcon = when (pin.pinType ?: "UNKNOWN") {
+                        "VISITED_PENDING" -> yellowMarkerPin(context)
+                        "RECORDED" -> blueMarkerPin(context)
+                        "FAVORED" -> redMarkerPin(context)
+                        else -> navyMarkerPin(context)
+                    }
+
+                    selectedTitles = pin.tripName
+                    selectedRating = pin.rating
+                    selectedDate = pin.createdAt
+                    selectedName = pin.placeName
+
+                    // 마커 추가
+                    Marker(
+                        state = MarkerState(position = LatLng(pin.latitude, pin.longitude)),
+                        title = "선택한 위치",
+                        icon = markerIcon
+                    )
+                }
 
                 // 저장된 위도, 경도가 있으면 마커 표시
                 if (savedLatitude != 0.0 && savedLongitude != 0.0) {
@@ -458,7 +453,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                 onButtonClick = {
 
                                     val mapPinRecordRequest = MapPinRecordRequest(
-                                        pinId = 1,
+                                        pinId = 40,
                                         pinType = "RECORDED"
                                     )
 
@@ -520,8 +515,6 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                                             longitude = selectedLng,  // 예시로 가정한 변수
                                             pinType = "FAVORED"  // 찜하기로 설정
                                         )
-
-
 
                                         // ViewModel을 통해 API 호출
                                         viewModel.favoredApi(mapPinFavoredRequest) // 여기서 mapViewModel은 ViewModel 인스턴스입니다.

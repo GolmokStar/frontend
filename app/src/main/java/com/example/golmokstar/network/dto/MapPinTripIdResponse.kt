@@ -15,7 +15,3 @@ data class MapPinTripIdResponse (
     val rating: Double? = null,    // 기록 상태에서만 있음
     val createdAt: String
 )
-
-data class ApiMapPinResponse(
-    val trips: List<MapPinTripIdResponse> // trips는 리스트입니다.
-)

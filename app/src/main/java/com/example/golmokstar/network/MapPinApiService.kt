@@ -1,6 +1,5 @@
 package com.example.golmokstar.network
 
-import com.example.golmokstar.network.dto.ApiMapPinResponse
 import com.example.golmokstar.network.dto.ApiResponse
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinFavoredResponse
@@ -36,6 +35,6 @@ interface MapPinApiService {
 
     // 특정 여행 아이디를 이용하여 여행 데이터 조회
     @GET("/mapPin/{tripId}")
-    suspend fun mapPintripId(@Path("tripId") tripId: Int): Response<ApiMapPinResponse>
+    suspend fun mapPintripId(@Path("tripId") tripId: Int): Response<List<MapPinTripIdResponse>>
 
 }

@@ -6,9 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.golmokstar.network.MapPinApiService
-import com.example.golmokstar.network.dto.ApiMapPinResponse
 import com.example.golmokstar.network.dto.ApiResponse
 import com.example.golmokstar.network.dto.MapPinFavoredRequest
 import com.example.golmokstar.network.dto.MapPinRecordRequest
@@ -45,8 +43,8 @@ class MapViewModel @Inject constructor(
     private val _pinDataList = MutableLiveData<List<MapPinResponse>>()
     val pinDataList: LiveData<List<MapPinResponse>> = _pinDataList
 
-    private val _trippinDataList = MutableLiveData<List<ApiMapPinResponse>>()
-    val trippinDataList: LiveData<List<ApiMapPinResponse>> = _trippinDataList
+    private val _trippinDataList = MutableLiveData<List<MapPinTripIdResponse>>()
+    val trippinDataList: LiveData<List<MapPinTripIdResponse>> = _trippinDataList
 
 
 
@@ -188,25 +186,23 @@ class MapViewModel @Inject constructor(
     // 특정 tripId에 해당하는 여행 데이터 호출
     fun mapPinTripIdApi(tripId: Int) {
         viewModelScope.launch {
-            Log.e("mapPinTripIdAPI_CALL", "API 요청 시작") // 요청 로그 추가
+            Log.e("mapPinTripIdAPI_CALL", "API 요청 시작")
 
             try {
-                // API 호출
                 val response = withContext(Dispatchers.IO) {
-                    mapPinApiService.mapPintripId(tripId) // API 호출
+                    mapPinApiService.mapPintripId(tripId)
                 }
 
                 if (response.isSuccessful) {
-                    // 응답 데이터가 단일 객체일 경우
-                    val pin: ApiMapPinResponse? = response.body() // 단일 객체 받기
+                    val pinList = response.body() ?: emptyList() // ✅ 항상 null 방지
 
-                    if (pin != null) {
-                        // 응답 데이터를 리스트로 변환
-                        Log.w("API_CALL", "mapPin API 응답: ${gson.toJson(pin)}")
-                        _trippinDataList.postValue(listOf(pin)) // List로 변환하여 저장
+                    if (!pinList.isNullOrEmpty()) {
+                        Log.w("API_CALL", "mapPin API 응답: ${gson.toJson(pinList)}")
+                        _trippinDataList.postValue(pinList) // ✅ 정상적인 리스트 저장
                     } else {
-                        Log.e("API_CALL", "응답 데이터가 null입니다.")
-                        _placeRegisterResult.postValue("응답 데이터가 없습니다.")
+                        Log.e("API_CALL", "응답 데이터가 비어있습니다.")
+                        _trippinDataList.postValue(emptyList()) // ✅ 빈 리스트 저장
+                        _placeRegisterResult.postValue("해당 여행 데이터가 없습니다.")
                     }
                 } else {
                     val errorMessage = response.errorBody()?.string() ?: "알 수 없는 오류"
