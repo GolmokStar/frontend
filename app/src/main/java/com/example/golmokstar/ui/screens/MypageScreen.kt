@@ -1,5 +1,6 @@
 package com.example.golmokstar.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -35,13 +37,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.golmokstar.R
+import com.example.golmokstar.network.dto.UserInfoResponse
 import com.example.golmokstar.ui.theme.*
+import com.example.golmokstar.viewmodel.UserViewModel
 
 @Composable
-fun MyPageScreen() {
+fun MyPageScreen(userViewModel: UserViewModel = hiltViewModel()) {
+
+    val userInfo by userViewModel.userInfo.collectAsState()
+
     var showBellPopup by remember { mutableStateOf(false) }
     val friendRequests = listOf("문희삼사오육", "어쩌구", "저쩌", "구우", "블라블라") // 친구 요청 목록
+
+
+    LaunchedEffect(Unit) {
+        userViewModel.getUserInfo()
+    }
+
 
     Column(modifier = Modifier.fillMaxSize().background(White)) {
         Box(
@@ -59,7 +73,7 @@ fun MyPageScreen() {
                 )
             }
         }
-        ProfileBox()
+        ProfileBox(userInfo)
         FriendsListTitle()
         FriendsListScreen()
         LogOutAndDeleteButtons()
@@ -209,10 +223,8 @@ fun FriendRequestButtons(friendRequest: String) {
 }
 
 @Composable
-fun ProfileBox(travelCount: Int = 0) {
+fun ProfileBox(userInfo : UserInfoResponse, travelCount: Int = 0) {
     var isEditingProfile by remember { mutableStateOf(false) }
-    var userName by remember { mutableStateOf("민지") }
-    var selectedStyles by remember { mutableStateOf(listOf("음식", "힐링")) }
     var selectedProfileIndex by remember { mutableStateOf(0) }
 
     val context = LocalContext.current
@@ -244,8 +256,17 @@ fun ProfileBox(travelCount: Int = 0) {
                             .size(100.dp)
                             .padding(5.dp)
                             .clip(CircleShape)
-                            .background(BlurBackgroundGray)
-                    )
+                            .background(BlurBackgroundGray),
+                        contentAlignment = Alignment.Center // 이미지를 중앙 배치
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.appicon), // ✅ PNG 파일 참조
+                            contentDescription = "프로필 이미지",
+                            modifier = Modifier.fillMaxSize(), // Box 크기에 맞춤
+                            contentScale = ContentScale.Crop // 이미지 크기 조정 방식
+                        )
+                    }
+
 
                     Spacer(modifier = Modifier.width(16.dp))
 
@@ -254,10 +275,10 @@ fun ProfileBox(travelCount: Int = 0) {
                     ) {
                         if (isEditingProfile) {
                             BasicTextField(
-                                value = userName,
+                                value = userInfo.nickname,
                                 onValueChange = { newValue ->
                                     val filteredText = newValue.filter { it.isLetter() }.take(8) // 8글자 제한
-                                    userName = filteredText
+                                    //userInfo.nickname = filteredText
                                 },
                                 textStyle = AppTypography.bodyMedium,
                                 decorationBox = { innerTextField ->
@@ -290,10 +311,10 @@ fun ProfileBox(travelCount: Int = 0) {
                                         chunk.forEach { style ->
                                             Button(
                                                 onClick = {
-                                                    if (selectedStyles.contains(style)) {
-                                                        selectedStyles = selectedStyles.filterNot { it == style }
-                                                    } else if (selectedStyles.size < 6) {  // 최대 6개 선택
-                                                        selectedStyles = selectedStyles + style
+                                                    if (userInfo.interestAreas.contains(style)) {
+                                                        //selectedStyles = selectedStyles.filterNot { it == style }
+                                                    } else if (userInfo.interestAreas.size < 6) {  // 최대 6개 선택
+                                                        //selectedStyles = selectedStyles + style
                                                     }
                                                 },
                                                 modifier = Modifier
@@ -307,8 +328,8 @@ fun ProfileBox(travelCount: Int = 0) {
                                                     )
                                                     .padding(0.dp),
                                                 colors = ButtonDefaults.buttonColors(
-                                                    if (selectedStyles.contains(style)) MainNavy else White,
-                                                    contentColor = if (selectedStyles.contains(style)) White else MainNavy
+                                                    if (userInfo.interestAreas.contains(style)) MainNavy else White,
+                                                    contentColor = if (userInfo.interestAreas.contains(style)) White else MainNavy
                                                 ),
                                                 contentPadding = PaddingValues(0.dp)
                                             ) {
@@ -325,13 +346,13 @@ fun ProfileBox(travelCount: Int = 0) {
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = userName,
+                                    text = userInfo.nickname,
                                     style = AppTypography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
 
                                 Text(
-                                    text = "#1234",
+                                    text = "#" + userInfo.friendCode,
                                     style = AppTypography.labelMedium,
                                     color = TextDarkGray,
                                     modifier = Modifier.padding(end = 30.dp)
@@ -350,9 +371,9 @@ fun ProfileBox(travelCount: Int = 0) {
                                 modifier = Modifier.padding(top = 12.dp)
                             ) {
                                 // 스타일이 4개 이상이면 두 줄로 나누어 표시
-                                if (selectedStyles.size > 3) {
+                                if (userInfo.interestAreas.size > 3) {
                                     Column {
-                                        selectedStyles.chunked(3).forEach { chunk ->
+                                        userInfo.interestAreas.chunked(3).forEach { chunk ->
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.Start
@@ -378,7 +399,8 @@ fun ProfileBox(travelCount: Int = 0) {
                                         }
                                     }
                                 } else {
-                                    selectedStyles.forEach { style ->
+                                    userInfo.interestAreas.forEach { style ->
+                                        Log.e("style", style)
                                         Box(
                                             modifier = Modifier
                                                 .size(65.dp, 25.dp)
@@ -445,11 +467,11 @@ fun ProfileBox(travelCount: Int = 0) {
             IconButton(
                 onClick = {
                     if (isEditingProfile) {
-                        val nameLength = userName.length
+                        val nameLength = userInfo.nickname.length
                         if (nameLength in 2..6) {
-                            if (selectedStyles.isNotEmpty()) { // 여행 스타일이 1개 이상이면
-                                println("수정된 닉네임: ${userName}")
-                                println("선택된 여행 스타일: $selectedStyles")
+                            if (userInfo.interestAreas.isNotEmpty()) { // 여행 스타일이 1개 이상이면
+                                println("수정된 닉네임: ${userInfo.nickname}")
+                                println("선택된 여행 스타일: $userInfo.interestAreas")
                                 println("선택한 프로필 인덱스: $selectedProfileIndex")
                                 isEditingProfile = false
                             } else {
@@ -475,7 +497,7 @@ fun ProfileBox(travelCount: Int = 0) {
 
         // 🔴 닉네임 안내 메시지
         Spacer(modifier = Modifier.height(8.dp)) // 간격 조정
-        if (userName.length <= 1) {
+        if (userInfo.nickname.length <= 1) {
             Text(
                 text = "* 닉네임을 입력해주세요. 2~8글자로 설정 가능합니다.",
                 style = AppTypography.labelSmall,
@@ -1041,23 +1063,6 @@ fun FriendsAddDialog(
 }
 
 
-@Preview(name = "Pixel 5", device = "id:pixel_5",
-    showBackground = true,
-    showSystemUi = true)
-@Composable
-fun MyPageScreenPreview() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(WindowInsets.statusBars.asPaddingValues())
-    ) {
-        MyPageScreen()
-//        FriendsAddDialog(
-//            onDismiss = {},
-//            onFriendRequest = {}
-//        )
-    }
-}
 
 val pretendardRegular = FontFamily(
     Font(R.font.pretendard_regular)

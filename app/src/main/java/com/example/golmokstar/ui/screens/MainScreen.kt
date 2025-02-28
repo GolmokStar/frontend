@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import com.example.golmokstar.navigation.BottomNavigationBar
 import com.example.golmokstar.navigation.BottomNavItem
 import com.example.golmokstar.viewmodel.TravelViewModel
+import com.example.golmokstar.viewmodel.UserViewModel
 
 @Composable
 fun MainScreen(travelViewModel: TravelViewModel = hiltViewModel()) {
